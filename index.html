@@ -1,12 +1,127 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RoomControl</title>
+  <style>
+    :root {
+      --main-color: #007bff;
+      --light-gray: #f8f9fa;
+      --dark-gray: #343a40;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: var(--light-gray);
+      color: var(--dark-gray);
+    }
+
+    header {
+      background-color: var(--main-color);
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    main {
+      padding: 1rem;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: white;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f0f0f0;
+    }
+
+    @media screen and (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      th {
+        display: none;
+      }
+      td {
+        border: none;
+        padding: 0.5rem;
+        position: relative;
+      }
+      td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        display: block;
+      }
+    }
+
+    .btn {
+      background-color: var(--main-color);
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
-  <h1>Bienvenue sur RoomControl</h1>
-  <p>Application en ligne de gestion des chambres</p>
+  <header>
+    <h1>RoomControl</h1>
+    <p>Application en ligne de gestion des chambres</p>
+  </header>
+
+  <main>
+    <h2>Liste des chambres</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Chambre</th>
+          <th>État</th>
+          <th>Dernière mise à jour</th>
+          <th>Responsable</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td data-label="Chambre">101</td>
+          <td data-label="État">Libre</td>
+          <td data-label="Mise à jour">2025-05-18 14:30</td>
+          <td data-label="Responsable">Alice</td>
+        </tr>
+        <tr>
+          <td data-label="Chambre">102</td>
+          <td data-label="État">Occupée</td>
+          <td data-label="Mise à jour">2025-05-18 13:45</td>
+          <td data-label="Responsable">Bob</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <button class="btn">Ajouter une chambre</button>
+  </main>
 </body>
 </html>
