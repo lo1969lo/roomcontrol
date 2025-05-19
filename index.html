@@ -23,6 +23,20 @@
     const db = getDatabase(app);
 
     const etats = ['non_vendue','depart','recouche','recouche_non_faire','parfum','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const etatLabels = {
+      non_vendue: "Non vendue",
+      depart: "Départ",
+      recouche: "Recouche",
+      recouche_non_faire: "Recouche (non à faire)",
+      parfum: "Parfum",
+      prete: "Prête",
+      bloquee: "Bloquée",
+      maintenance: "Maintenance",
+      urgence_parfum: "Urgence parfum",
+      bloquee_videe: "Bloquée vidée",
+      quick: "Quick"
+    };
+
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
 
     const data = {
@@ -33,6 +47,17 @@
     };
 
     const container = document.getElementById("app");
+
+    // Générer la légende
+    const legendDiv = document.createElement("div");
+    legendDiv.className = "legend";
+    Object.entries(etatLabels).forEach(([etat, label]) => {
+      const span = document.createElement("span");
+      span.className = `etat-item ${etat}`;
+      span.textContent = label;
+      legendDiv.appendChild(span);
+    });
+    container.appendChild(legendDiv);
 
     for (const [etage, chambres] of Object.entries(data)) {
       const section = document.createElement("div");
@@ -96,9 +121,8 @@
     }
 
     document.getElementById("pdfBtn").addEventListener("click", () => {
-      const pages = document.querySelectorAll('.print-page');
       const opt = {
-        margin: 0.5,
+        margin: 0.3,
         filename: 'feuille-chambres.pdf',
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2 },
@@ -126,6 +150,19 @@
     .bloquee_videe { background: orange; color: white; }
     .quick { background: black; color: white; }
     #pdfBtn { margin-bottom: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .legend { margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 8px; }
+    .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.85rem; color: white; }
+    .etat-item.non_vendue { background: grey; }
+    .etat-item.depart { background: red; color: black; }
+    .etat-item.recouche { background: navy; color: #87cefa; }
+    .etat-item.recouche_non_faire { background: #87cefa; color: black; }
+    .etat-item.parfum { background: pink; color: red; }
+    .etat-item.prete { background: yellow; color: black; }
+    .etat-item.bloquee { background: orange; color: black; }
+    .etat-item.maintenance { background: white; color: #ccc; border: 1px solid #ccc; }
+    .etat-item.urgence_parfum { background: red; color: white; }
+    .etat-item.bloquee_videe { background: orange; color: white; }
+    .etat-item.quick { background: black; color: white; }
   </style>
 </head>
 <body>
