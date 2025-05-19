@@ -23,6 +23,19 @@
     const db = getDatabase(app);
 
     const etats = ['non_vendue','depart','recouche','recouche_non_faire','parfum','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const etatLabels = {
+      non_vendue: "Non vendue",
+      depart: "Départ",
+      recouche: "Recouche",
+      recouche_non_faire: "Recouche (non à faire)",
+      parfum: "Parfum",
+      prete: "Prête",
+      bloquee: "Bloquée",
+      maintenance: "Maintenance",
+      urgence_parfum: "Urgence parfum",
+      bloquee_videe: "Bloquée vidée",
+      quick: "Quick"
+    };
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
     const data = {
       "Rez-de-chaussée": [16,17,18,20,21,22,23,24,25,26,27,28,29],
@@ -32,6 +45,30 @@
     };
 
     const container = document.getElementById("app");
+
+    const controls = document.createElement("div");
+    controls.innerHTML = `
+      <button id="pdfBtn">Télécharger PDF</button>
+      <button id="resetBtn">Tout réinitialiser</button>
+      <label>Filtrer par collaborateur :</label>
+      <select id="filterSelect">
+        <option value="">-- Tous --</option>
+        ${collaborateurs.map(c => `<option value="${c}">${c}</option>`).join('')}
+      </select>
+    `;
+    container.appendChild(controls);
+
+    const legendDiv = document.createElement("div");
+    legendDiv.className = "legend";
+    Object.entries(etatLabels).forEach(([etat, label]) => {
+      const span = document.createElement("span");
+      span.className = `etat-item ${etat}`;
+      span.textContent = label;
+      legendDiv.appendChild(span);
+    });
+    container.appendChild(legendDiv);
+
+    const chambreElements = [];
 
     Object.entries(data).forEach(([etage, chambres]) => {
       const section = document.createElement("div");
@@ -73,7 +110,6 @@
           const val = snapshot.val();
           if (val) {
             etat.textContent = val.etat;
-            etat.className = val.etat;
             select.value = val.collaborateur || "---";
             chambreDiv.className = `chambre ${val.etat}`;
             info.textContent = (val.etat !== 'non_vendue' && val.collaborateur !== '---') ? `${val.etat} | ${val.collaborateur}` : val.etat;
@@ -87,26 +123,79 @@
           const current = etats.indexOf(etat.textContent);
           const next = etats[(current + 1) % etats.length];
           update(chambreRef, { etat: next, collaborateur: select.value });
-          etat.textContent = next;
-          etat.className = next;
-          chambreDiv.className = `chambre ${next}`;
-          info.textContent = (next !== 'non_vendue' && select.value !== '---') ? `${next} | ${select.value}` : next;
         };
 
         select.onchange = () => {
           update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
-          chambreDiv.className = `chambre ${etat.textContent}`;
-          etat.className = etat.textContent;
-          info.textContent = (etat.textContent !== 'non_vendue' && select.value !== '---') ? `${etat.textContent} | ${select.value}` : etat.textContent;
         };
 
         wrap.appendChild(chambreDiv);
+        chambreElements.push(chambreDiv);
       });
 
       section.appendChild(wrap);
       container.appendChild(section);
     });
+
+    document.getElementById("pdfBtn").addEventListener("click", () => {
+      const opt = {
+        margin: 0.2,
+        filename: 'feuille-chambres.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(document.getElementById("app")).save();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (confirm("Tout remettre à zéro ?")) {
+        Object.values(data).flat().forEach(num => {
+          set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
+        });
+      }
+    });
+
+    document.getElementById("filterSelect").addEventListener("change", e => {
+      const value = e.target.value;
+      chambreElements.forEach(div => {
+        div.style.display = (!value || div.dataset.collaborateur === value) ? "block" : "none";
+      });
+    });
   </script>
+  <style>
+    body { font-family: Arial; background: #f5f5f5; padding: 2rem; }
+    .etage { margin-bottom: 2rem; page-break-after: always; }
+    .chambres { display: flex; flex-wrap: wrap; gap: 10px; }
+    .chambre { background: white; padding: 1rem; border-radius: 8px; min-width: 100px; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .etat-collabo { margin-top: 0.5rem; font-size: 0.85rem; color: #555; }
+    button, select { margin-top: 0.3rem; padding: 0.3rem; width: 100%; }
+    .non_vendue { background: grey; color: white; }
+    .depart { background: red; color: black; }
+    .recouche { background: navy; color: #87cefa; }
+    .recouche_non_faire { background: #87cefa; color: black; }
+    .parfum { background: pink; color: red; }
+    .prete { background: yellow; color: black; }
+    .bloquee { background: orange; color: black; }
+    .maintenance { background: white; color: #ccc; border: 2px solid #ccc; }
+    .urgence_parfum { background: red; color: white; }
+    .bloquee_videe { background: orange; color: white; }
+    .quick { background: black; color: white; }
+    #pdfBtn, #resetBtn { margin-right: 10px; margin-bottom: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; }
+    .etat-item.non_vendue { background: grey; }
+    .etat-item.depart { background: red; color: black; }
+    .etat-item.recouche { background: navy; color: #87cefa; }
+    .etat-item.recouche_non_faire { background: #87cefa; color: black; }
+    .etat-item.parfum { background: pink; color: red; }
+    .etat-item.prete { background: yellow; color: black; }
+    .etat-item.bloquee { background: orange; color: black; }
+    .etat-item.maintenance { background: white; color: #ccc; border: 1px solid #ccc; }
+    .etat-item.urgence_parfum { background: red; color: white; }
+    .etat-item.bloquee_videe { background: orange; color: white; }
+    .etat-item.quick { background: black; color: white; }
+  </style>
 </head>
 <body>
   <h1>RoomControl (temps réel)</h1>
