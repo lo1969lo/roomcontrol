@@ -7,7 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
@@ -48,6 +48,19 @@
 
     const container = document.getElementById("app");
 
+    // Barre de contrôle : PDF + Réinitialisation + Filtre
+    const controls = document.createElement("div");
+    controls.innerHTML = `
+      <button id="pdfBtn">Télécharger PDF</button>
+      <button id="resetBtn">Tout réinitialiser</button>
+      <label>Filtrer par collaborateur :</label>
+      <select id="filterSelect">
+        <option value="">-- Tous --</option>
+        ${collaborateurs.map(c => `<option value="${c}">${c}</option>`).join('')}
+      </select>
+    `;
+    container.appendChild(controls);
+
     const legendDiv = document.createElement("div");
     legendDiv.className = "legend";
     Object.entries(etatLabels).forEach(([etat, label]) => {
@@ -57,6 +70,8 @@
       legendDiv.appendChild(span);
     });
     container.appendChild(legendDiv);
+
+    const chambreElements = [];
 
     Object.entries(data).forEach(([etage, chambres]) => {
       const section = document.createElement("div");
@@ -77,7 +92,6 @@
         chambreDiv.appendChild(titre);
 
         const etat = document.createElement("button");
-        etat.textContent = "...";
         chambreDiv.appendChild(etat);
 
         const select = document.createElement("select");
@@ -95,6 +109,12 @@
 
         const chambreRef = ref(db, `chambres/${num}`);
 
+        get(chambreRef).then(snapshot => {
+          if (!snapshot.exists()) {
+            set(chambreRef, { etat: 'non_vendue', collaborateur: '---' });
+          }
+        });
+
         onValue(chambreRef, snapshot => {
           const val = snapshot.val();
           if (val) {
@@ -102,6 +122,7 @@
             select.value = val.collaborateur || "---";
             chambreDiv.className = `chambre ${val.etat}`;
             info.textContent = (val.etat !== 'non_vendue' && val.collaborateur !== '---') ? `${val.etat} | ${val.collaborateur}` : val.etat;
+            chambreDiv.dataset.collaborateur = val.collaborateur;
           }
         });
 
@@ -116,6 +137,7 @@
         };
 
         wrap.appendChild(chambreDiv);
+        chambreElements.push(chambreDiv);
       });
 
       section.appendChild(wrap);
@@ -131,6 +153,21 @@
         jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
       };
       html2pdf().set(opt).from(document.getElementById("app")).save();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (confirm("Tout remettre à zéro ?")) {
+        Object.values(data).flat().forEach(num => {
+          set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
+        });
+      }
+    });
+
+    document.getElementById("filterSelect").addEventListener("change", e => {
+      const value = e.target.value;
+      chambreElements.forEach(div => {
+        div.style.display = (!value || div.dataset.collaborateur === value) ? "block" : "none";
+      });
     });
   </script>
   <style>
@@ -151,8 +188,8 @@
     .urgence_parfum { background: red; color: white; }
     .bloquee_videe { background: orange; color: white; }
     .quick { background: black; color: white; }
-    #pdfBtn { margin-bottom: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .legend { margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 8px; }
+    #pdfBtn, #resetBtn { margin-right: 10px; margin-bottom: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; }
     .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; }
     .etat-item.non_vendue { background: grey; }
     .etat-item.depart { background: red; color: black; }
@@ -169,7 +206,6 @@
 </head>
 <body>
   <h1>RoomControl (temps réel)</h1>
-  <button id="pdfBtn">Télécharger la feuille de chambres (PDF)</button>
   <div id="app"></div>
 </body>
 </html>
