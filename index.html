@@ -7,7 +7,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+    import { getDatabase, ref, set, onValue, get } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
@@ -48,7 +48,6 @@
 
     const container = document.getElementById("app");
 
-    // Générer la légende
     const legendDiv = document.createElement("div");
     legendDiv.className = "legend";
     Object.entries(etatLabels).forEach(([etat, label]) => {
@@ -59,7 +58,7 @@
     });
     container.appendChild(legendDiv);
 
-    for (const [etage, chambres] of Object.entries(data)) {
+    Object.entries(data).forEach(([etage, chambres]) => {
       const section = document.createElement("div");
       section.className = "etage print-page";
       const title = document.createElement("h2");
@@ -78,12 +77,7 @@
         chambreDiv.appendChild(titre);
 
         const etat = document.createElement("button");
-        etat.textContent = "non_vendue";
-        etat.onclick = () => {
-          let current = etats.indexOf(etat.textContent);
-          let next = etats[(current + 1) % etats.length];
-          set(ref(db, `chambres/${num}`), { etat: next, collaborateur: select.value });
-        };
+        etat.textContent = "...";
         chambreDiv.appendChild(etat);
 
         const select = document.createElement("select");
@@ -93,17 +87,15 @@
           opt.textContent = name;
           select.appendChild(opt);
         });
-        select.value = "---";
-        select.onchange = () => {
-          set(ref(db, `chambres/${num}`), { etat: etat.textContent, collaborateur: select.value });
-        };
         chambreDiv.appendChild(select);
 
         const info = document.createElement("div");
         info.className = "etat-collabo";
         chambreDiv.appendChild(info);
 
-        onValue(ref(db, `chambres/${num}`), snapshot => {
+        const chambreRef = ref(db, `chambres/${num}`);
+
+        onValue(chambreRef, snapshot => {
           const val = snapshot.val();
           if (val) {
             etat.textContent = val.etat;
@@ -113,19 +105,29 @@
           }
         });
 
+        etat.onclick = () => {
+          const current = etats.indexOf(etat.textContent);
+          const next = etats[(current + 1) % etats.length];
+          set(chambreRef, { etat: next, collaborateur: select.value });
+        };
+
+        select.onchange = () => {
+          set(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+        };
+
         wrap.appendChild(chambreDiv);
       });
 
       section.appendChild(wrap);
       container.appendChild(section);
-    }
+    });
 
     document.getElementById("pdfBtn").addEventListener("click", () => {
       const opt = {
-        margin: 0.3,
+        margin: 0.2,
         filename: 'feuille-chambres.pdf',
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 1.5 },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
       };
       html2pdf().set(opt).from(document.getElementById("app")).save();
@@ -151,7 +153,7 @@
     .quick { background: black; color: white; }
     #pdfBtn { margin-bottom: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .legend { margin-bottom: 1rem; display: flex; flex-wrap: wrap; gap: 8px; }
-    .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.85rem; color: white; }
+    .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; }
     .etat-item.non_vendue { background: grey; }
     .etat-item.depart { background: red; color: black; }
     .etat-item.recouche { background: navy; color: #87cefa; }
