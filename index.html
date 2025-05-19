@@ -45,34 +45,69 @@
       border-radius: 6px;
       font-weight: bold;
       border: 1px solid #ccc;
-      min-width: 60px;
+      min-width: 70px;
       text-align: center;
       cursor: pointer;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* ÉTATS DE CHAMBRES */
-    .chambre.depart { background-color: red; color: black; }
-    .chambre.recouche { background-color: navy; color: #87cefa; }
-    .chambre.recouche_non_faire { background-color: #87cefa; color: black; }
-    .chambre.parfum { background-color: pink; color: red; }
-    .chambre.prete { background-color: yellow; color: black; }
-    .chambre.bloquee { background-color: orange; color: black; }
-    .chambre.maintenance { background-color: white; color: white; border: 2px solid #ccc; }
-    .chambre.urgence_parfum { background-color: red; color: white; }
-    .chambre.bloquee_videe { background-color: orange; color: white; }
-    .chambre.non_vendue { background: grey; color: black; }
-    .chambre.quick { background: black; color: white; }
+    .etat-label {
+      font-size: 0.8rem;
+      margin-top: 5px;
+    }
+
+    .legende {
+      background: white;
+      padding: 1rem;
+      margin-bottom: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .legende h3 {
+      margin-top: 0;
+    }
+
+    .etat-item {
+      display: inline-block;
+      margin: 5px 8px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    /* États de chambres */
+    .depart { background-color: red; color: black; }
+    .recouche { background-color: navy; color: #87cefa; }
+    .recouche_non_faire { background-color: #87cefa; color: black; }
+    .parfum { background-color: pink; color: red; }
+    .prete { background-color: yellow; color: black; }
+    .bloquee { background-color: orange; color: black; }
+    .maintenance { background-color: white; color: white; border: 2px solid #ccc; }
+    .urgence_parfum { background-color: red; color: white; }
+    .bloquee_videe { background-color: orange; color: white; }
+    .non_vendue { background: grey; color: black; }
+    .quick { background: black; color: white; }
 
   </style>
 </head>
 <body>
   <header>
     <h1>RoomControl</h1>
-    <p>Vue par étage — États colorés</p>
+    <p>Application interactive — États des chambres</p>
   </header>
 
-  <main id="content"></main>
+  <main>
+    <section class="legende">
+      <h3>Légende des couleurs</h3>
+      <div id="legende-list"></div>
+    </section>
+
+    <div id="content"></div>
+  </main>
 
   <script>
     const data = {
@@ -82,12 +117,31 @@
       "3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329]
     };
 
-    const etats = ['depart','recouche','recouche_non_faire','parfum','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','non_vendue','quick'];
+    const etats = ['non_vendue','depart','recouche','recouche_non_faire','parfum','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const etatLabels = {
+      non_vendue: "Non vendue",
+      depart: "Départ",
+      recouche: "Recouche",
+      recouche_non_faire: "Recouche (non à faire)",
+      parfum: "Parfum",
+      prete: "Prête",
+      bloquee: "Bloquée",
+      maintenance: "Maintenance",
+      urgence_parfum: "Urgence parfum",
+      bloquee_videe: "Bloquée vidée",
+      quick: "Quick"
+    };
 
-    function getRandomEtat() {
-      return etats[Math.floor(Math.random() * etats.length)];
-    }
+    // Générer la légende
+    const legendeContainer = document.getElementById("legende-list");
+    etats.forEach(etat => {
+      const item = document.createElement("span");
+      item.className = `etat-item ${etat}`;
+      item.textContent = etatLabels[etat];
+      legendeContainer.appendChild(item);
+    });
 
+    // Affichage des chambres
     const container = document.getElementById("content");
 
     for (const [etage, chambres] of Object.entries(data)) {
@@ -103,10 +157,17 @@
 
       chambres.forEach(numero => {
         const chambre = document.createElement("div");
-        const etat = getRandomEtat(); // Simule un état au hasard
-        chambre.className = `chambre ${etat}`;
-        chambre.textContent = numero;
-        chambre.title = `État : ${etat}`;
+        let etatIndex = 0;
+
+        chambre.className = `chambre ${etats[etatIndex]}`;
+        chambre.innerHTML = `<div>${numero}</div><div class="etat-label">${etatLabels[etats[etatIndex]]}</div>`;
+
+        chambre.addEventListener("click", () => {
+          etatIndex = (etatIndex + 1) % etats.length;
+          chambre.className = `chambre ${etats[etatIndex]}`;
+          chambre.innerHTML = `<div>${numero}</div><div class="etat-label">${etatLabels[etats[etatIndex]]}</div>`;
+        });
+
         chambreWrap.appendChild(chambre);
       });
 
