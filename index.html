@@ -88,6 +88,18 @@
 
     const container = document.getElementById("app");
 
+    const controls = document.createElement("div");
+    controls.innerHTML = `
+      <button id="pdfBtn">Télécharger PDF</button>
+      <button id="resetBtn">Tout réinitialiser</button>
+      <label>Filtrer par collaborateur :</label>
+      <select id="filterSelect">
+        <option value="">-- Tous --</option>
+        ${collaborateurs.map(c => `<option value="${c}">${c}</option>`).join('')}
+      </select>
+    `;
+    container.appendChild(controls);
+
     const legendDiv = document.createElement("div");
     legendDiv.className = "legend";
     Object.entries(etatLabels).forEach(([etat, label], index) => {
@@ -98,6 +110,102 @@
       legendDiv.appendChild(span);
     });
     container.appendChild(legendDiv);
+
+    const chambreElements = [];
+
+    Object.entries(data).forEach(([etage, chambres]) => {
+      const section = document.createElement("div");
+      section.className = "etage print-page";
+      const title = document.createElement("h2");
+      title.textContent = etage;
+      section.appendChild(title);
+
+      const wrap = document.createElement("div");
+      wrap.className = "chambres";
+
+      chambres.forEach(num => {
+        const chambreDiv = document.createElement("div");
+        chambreDiv.className = "chambre";
+
+        const titre = document.createElement("div");
+        titre.textContent = `${num}`;
+        chambreDiv.appendChild(titre);
+
+        const etat = document.createElement("button");
+        chambreDiv.appendChild(etat);
+
+        const select = document.createElement("select");
+        collaborateurs.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+        chambreDiv.appendChild(select);
+
+        const info = document.createElement("div");
+        info.className = "etat-collabo";
+        chambreDiv.appendChild(info);
+
+        const chambreRef = ref(db, `chambres/${num}`);
+
+        onValue(chambreRef, snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            etat.textContent = val.etat;
+            etat.className = val.etat;
+            select.value = val.collaborateur || "---";
+            chambreDiv.className = `chambre ${val.etat}`;
+            info.textContent = val.etat.toUpperCase();
+            chambreDiv.dataset.collaborateur = val.collaborateur;
+          } else {
+            update(chambreRef, { etat: 'non_vendue', collaborateur: '---' });
+          }
+        });
+
+        etat.onclick = () => {
+          const current = etats.indexOf(etat.textContent);
+          const next = etats[(current + 1) % etats.length];
+          update(chambreRef, { etat: next, collaborateur: select.value });
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+        };
+
+        wrap.appendChild(chambreDiv);
+        chambreElements.push(chambreDiv);
+      });
+
+      section.appendChild(wrap);
+      container.appendChild(section);
+    });
+
+    document.getElementById("pdfBtn").addEventListener("click", () => {
+      const opt = {
+        margin: 0.2,
+        filename: 'feuille-chambres.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(document.getElementById("app")).save();
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      if (confirm("Tout remettre à zéro ?")) {
+        Object.values(data).flat().forEach(num => {
+          set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
+        });
+      }
+    });
+
+    document.getElementById("filterSelect").addEventListener("change", e => {
+      const value = e.target.value;
+      chambreElements.forEach(div => {
+        div.style.display = (!value || div.dataset.collaborateur === value) ? "block" : "none";
+      });
+    });
   </script>
 </head>
 <body>
