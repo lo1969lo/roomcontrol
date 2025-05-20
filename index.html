@@ -194,6 +194,7 @@
 
     document.getElementById("resetBtn").addEventListener("click", () => {
       if (confirm("Tout remettre à zéro ?")) {
+        
         Object.values(data).flat().forEach(num => {
           set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
         });
