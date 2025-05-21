@@ -42,6 +42,8 @@
     .etat-item.bloquee_videe { background: orange; color: white; }
     .etat-item.quick { background: black; color: white; }
     #controls { margin-bottom: 1rem; }
+    #resume { background: #fff; padding: 1rem; margin-top: 2rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    #resume h2 { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
@@ -51,6 +53,7 @@
     <button id="pdfBtn">Télécharger PDF</button>
   </div>
   <div id="app"></div>
+  <div id="resume"></div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
@@ -107,6 +110,8 @@
       legendDiv.appendChild(span);
     });
     container.appendChild(legendDiv);
+
+    const chambreElements = [];
 
     Object.entries(data).forEach(([etage, chambres]) => {
       const section = document.createElement("div");
@@ -169,6 +174,7 @@
         };
 
         wrap.appendChild(chambreDiv);
+        chambreElements.push(chambreDiv);
       });
 
       section.appendChild(wrap);
@@ -186,13 +192,53 @@
     document.getElementById("pdfBtn").onclick = () => {
       const opt = {
         margin: 0.2,
-        filename: 'feuille-chambres.pdf',
+        filename: `feuille-chambres-${new Date().toISOString().slice(0,10)}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 1.5 },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
       };
       html2pdf().set(opt).from(document.body).save();
     };
+
+    function updateResume() {
+      const stats = {};
+      collaborateurs.forEach(c => stats[c] = {});
+
+      Object.values(data).flat().forEach(num => {
+        const chambreRef = ref(db, `chambres/${num}`);
+        onValue(chambreRef, snapshot => {
+          const val = snapshot.val();
+          if (!val || val.collaborateur === "---") return;
+          const c = val.collaborateur;
+          const e = val.etat;
+          stats[c][e] = (stats[c][e] || 0) + 1;
+          renderResume(stats);
+        }, { onlyOnce: true });
+      });
+    }
+
+    function renderResume(stats) {
+      const container = document.getElementById("resume");
+      container.innerHTML = '<h2>Résumé par collaborateur</h2>';
+      Object.entries(stats).forEach(([collab, etats]) => {
+        if (Object.keys(etats).length === 0) return;
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>${collab}</strong> : ` +
+          Object.entries(etats).map(([etat, n]) => `${etatLabels[etat]} (${n})`).join(", ");
+        container.appendChild(div);
+      });
+    }
+
+    updateResume();
+    setInterval(updateResume, 5000);
+
+    // Sauvegarde automatique PDF chaque jour à 23h59
+    const now = new Date();
+    const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0) - now;
+    setTimeout(() => {
+      document.getElementById("pdfBtn").click();
+      setInterval(() => document.getElementById("pdfBtn").click(), 24 * 60 * 60 * 1000);
+    }, millisTillMidnight);
   </script>
 </body>
 </html>
