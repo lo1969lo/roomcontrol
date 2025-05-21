@@ -42,10 +42,19 @@
     .etat-item.urgence_parfum { background: red; color: white; }
     .etat-item.bloquee_videe { background: orange; color: white; }
     .etat-item.quick { background: black; color: white; }
+    .recapitulatif { margin-top: 2rem; background: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 0 4px rgba(0,0,0,0.1); }
+    .recapitulatif h2 { font-size: 1.2rem; margin-bottom: 1rem; }
+    .recapitulatif ul { list-style: none; padding-left: 0; }
+    .recapitulatif li { margin-bottom: 0.5rem; }
   </style>
+</head>
+<body>
+  <h1>RoomControl (temps réel)</h1>
+  <div id="app"></div>
+  <div id="summary" class="recapitulatif"></div>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-    import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+    import { getDatabase, ref, set, update, onValue, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
@@ -87,7 +96,6 @@
     };
 
     const container = document.getElementById("app");
-
     const controls = document.createElement("div");
     controls.innerHTML = `
       <button id="pdfBtn">Télécharger PDF</button>
@@ -181,20 +189,54 @@
       container.appendChild(section);
     });
 
+    function mettreAJourRésumé() {
+      get(ref(db, 'chambres')).then(snapshot => {
+        const data = snapshot.val();
+        const résumé = {};
+        collaborateurs.forEach(nom => résumé[nom] = {});
+        Object.entries(data || {}).forEach(([num, chambre]) => {
+          if (chambre.collaborateur && chambre.collaborateur !== "---") {
+            const nom = chambre.collaborateur;
+            const etat = chambre.etat;
+            if (!résumé[nom][etat]) résumé[nom][etat] = 0;
+            résumé[nom][etat]++;
+          }
+        });
+
+        const conteneur = document.getElementById("summary");
+        conteneur.innerHTML = '<h2>Résumé par collaborateur</h2>';
+        const ul = document.createElement("ul");
+        Object.entries(résumé).forEach(([nom, stats]) => {
+          if (Object.keys(stats).length > 0) {
+            const li = document.createElement("li");
+            const résuméTexte = Object.entries(stats).map(([etat, count]) => `${etat.toUpperCase()}: ${count}`).join(", ");
+            li.textContent = `${nom} → ${résuméTexte}`;
+            ul.appendChild(li);
+          }
+        });
+        conteneur.appendChild(ul);
+      });
+    }
+
+    mettreAJourRésumé();
+    setInterval(mettreAJourRésumé, 5000);
+
     document.getElementById("pdfBtn").addEventListener("click", () => {
-      const opt = {
-        margin: 0.2,
-        filename: 'feuille-chambres.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 1.5 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-      };
-      html2pdf().set(opt).from(document.getElementById("app")).save();
+      mettreAJourRésumé();
+      setTimeout(() => {
+        const opt = {
+          margin: 0.2,
+          filename: 'feuille-chambres.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 1.5 },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(document.body).save();
+      }, 500);
     });
 
     document.getElementById("resetBtn").addEventListener("click", () => {
       if (confirm("Tout remettre à zéro ?")) {
-        
         Object.values(data).flat().forEach(num => {
           set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
         });
@@ -208,9 +250,5 @@
       });
     });
   </script>
-</head>
-<body>
-  <h1>RoomControl (temps réel)</h1>
-  <div id="app"></div>
 </body>
 </html>
