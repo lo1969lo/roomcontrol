@@ -36,8 +36,8 @@
 
     window.checkPassword = () => {
       const input = document.getElementById("password").value.trim();
-      if (input === "lo1969") userRole = 'admin';
-      else if (input === "etage90") userRole = 'agent';
+      if (input === "admin123") userRole = 'admin';
+      else if (input === "agent456") userRole = 'agent';
       else return alert("Mot de passe incorrect");
 
       document.getElementById("login").classList.add("hidden");
