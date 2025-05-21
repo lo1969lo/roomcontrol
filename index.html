@@ -12,6 +12,7 @@
     .login h2 { margin-bottom: 1rem; }
     .login input { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; }
     .login button { width: 100%; padding: 0.5rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .admin-only { display: none; }
   </style>
 </head>
 <body>
@@ -24,23 +25,27 @@
   <div id="content" class="hidden">
     <h1>RoomControl (temps réel)</h1>
     <div id="app"></div>
-    <div id="summary" class="recapitulatif"></div>
+    <div id="summary" class="recapitulatif admin-only"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getDatabase, ref, set, update, onValue, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
+    let userRole = '';
+
     window.checkPassword = () => {
-      const input = document.getElementById("password").value;
-      const authorized = ["admin123", "agent456"];
-      if (authorized.includes(input.trim())) {
-        document.getElementById("login").classList.add("hidden");
-        document.getElementById("content").classList.remove("hidden");
-        initApp();
-      } else {
-        alert("Mot de passe incorrect");
+      const input = document.getElementById("password").value.trim();
+      if (input === "lo1969") userRole = 'admin';
+      else if (input === "etage90") userRole = 'agent';
+      else return alert("Mot de passe incorrect");
+
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("content").classList.remove("hidden");
+      if (userRole === 'admin') {
+        document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'block');
       }
+      initApp();
     };
 
     function initApp() {
@@ -86,10 +91,10 @@
       const container = document.getElementById("app");
       const controls = document.createElement("div");
       controls.innerHTML = `
-        <button id="pdfBtn">Télécharger PDF</button>
-        <button id="resetBtn">Tout réinitialiser</button>
-        <label>Filtrer par collaborateur :</label>
-        <select id="filterSelect">
+        <button id="pdfBtn" class="admin-only">Télécharger PDF</button>
+        <button id="resetBtn" class="admin-only">Tout réinitialiser</button>
+        <label class="admin-only">Filtrer par collaborateur :</label>
+        <select id="filterSelect" class="admin-only">
           <option value="">-- Tous --</option>
           ${collaborateurs.map(c => `<option value="${c}">${c}</option>`).join('')}
         </select>
@@ -163,6 +168,10 @@
             const current = etats.indexOf(etat.textContent);
             const next = etats[(current + 1) % etats.length];
             update(chambreRef, { etat: next, collaborateur: select.value });
+            etat.textContent = next;
+            etat.className = next;
+            chambreDiv.className = `chambre ${next}`;
+            info.textContent = next.toUpperCase();
           };
 
           select.onchange = () => {
@@ -209,7 +218,8 @@
       mettreAJourRésumé();
       setInterval(mettreAJourRésumé, 5000);
 
-      document.getElementById("pdfBtn").addEventListener("click", () => {
+      const pdfBtn = document.getElementById("pdfBtn");
+      if (pdfBtn) pdfBtn.addEventListener("click", () => {
         mettreAJourRésumé();
         setTimeout(() => {
           const opt = {
@@ -223,7 +233,8 @@
         }, 500);
       });
 
-      document.getElementById("resetBtn").addEventListener("click", () => {
+      const resetBtn = document.getElementById("resetBtn");
+      if (resetBtn) resetBtn.addEventListener("click", () => {
         if (confirm("Tout remettre à zéro ?")) {
           Object.values(data).flat().forEach(num => {
             set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
@@ -231,7 +242,8 @@
         }
       });
 
-      document.getElementById("filterSelect").addEventListener("change", e => {
+      const filterSelect = document.getElementById("filterSelect");
+      if (filterSelect) filterSelect.addEventListener("change", e => {
         const value = e.target.value;
         chambreElements.forEach(div => {
           div.style.display = (!value || div.dataset.collaborateur === value) ? "block" : "none";
