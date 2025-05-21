@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RoomControl (temps réel AGENT)</title>
+  <title>RoomControl (temps réel ADMIN)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body { font-family: Arial; background: #f5f5f5; padding: 2rem; }
@@ -12,6 +12,7 @@
     .chambre { background: white; padding: 1rem; border-radius: 8px; min-width: 100px; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     .etat-collabo { margin-top: 0.5rem; font-size: 0.85rem; font-weight: bold; color: #222; text-transform: uppercase; height: 1.5rem; display: flex; align-items: center; justify-content: center; }
     button, select { margin-top: 0.3rem; padding: 0.3rem; width: 100%; font-size: 0.85rem; height: 2rem; }
+    .blanc { background: white; color: black; border: 1px solid #ccc; }
     .non_vendue { background: grey; color: white; }
     .depart { background: red; color: black; }
     .recouche { background: navy; color: #87cefa; }
@@ -28,6 +29,7 @@
     .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
     .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; position: relative; text-align: center; min-width: 75px; }
     .etat-item::after { content: attr(data-index); display: block; font-size: 0.75rem; color: black; margin-top: 2px; }
+    .etat-item.blanc { background: white; color: black; border: 1px solid #ccc; }
     .etat-item.non_vendue { background: grey; }
     .etat-item.depart { background: red; color: black; }
     .etat-item.recouche { background: navy; color: #87cefa; }
@@ -41,12 +43,18 @@
     .etat-item.urgence_parfum { background: red; color: white; }
     .etat-item.bloquee_videe { background: orange; color: white; }
     .etat-item.quick { background: black; color: white; }
+    #resume { margin-top: 2rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    #resume h2 { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <h1>RoomControl (temps réel AGENT)</h1>
+  <h1>RoomControl (temps réel ADMIN)</h1>
+  <div id="controls">
+    <button id="resetBtn">Tout réinitialiser</button>
+    <button id="pdfBtn">Télécharger PDF</button>
+  </div>
   <div id="app"></div>
-
+  <div id="resume"></div>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
@@ -64,10 +72,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const etats = ['non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const etats = ['blanc','non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
 
     const etatLabels = {
+      blanc: "BLANC",
       non_vendue: "NON VENDUE",
       depart: "DEPART",
       recouche: "RECOUCHE",
@@ -91,39 +100,35 @@
     };
 
     const container = document.getElementById("app");
-
     const legendDiv = document.createElement("div");
     legendDiv.className = "legend";
     Object.entries(etatLabels).forEach(([etat, label], index) => {
       const span = document.createElement("span");
       span.className = `etat-item ${etat}`;
-      span.setAttribute("data-index", index + 1);
+      span.setAttribute("data-index", index);
       span.textContent = label;
       legendDiv.appendChild(span);
     });
     container.appendChild(legendDiv);
 
+    const chambreElements = [];
     Object.entries(data).forEach(([etage, chambres]) => {
       const section = document.createElement("div");
       section.className = "etage print-page";
       const title = document.createElement("h2");
       title.textContent = etage;
       section.appendChild(title);
-
       const wrap = document.createElement("div");
       wrap.className = "chambres";
 
       chambres.forEach(num => {
         const chambreDiv = document.createElement("div");
         chambreDiv.className = "chambre";
-
         const titre = document.createElement("div");
         titre.textContent = `${num}`;
         chambreDiv.appendChild(titre);
-
         const etat = document.createElement("button");
         chambreDiv.appendChild(etat);
-
         const select = document.createElement("select");
         collaborateurs.forEach(name => {
           const opt = document.createElement("option");
@@ -132,11 +137,9 @@
           select.appendChild(opt);
         });
         chambreDiv.appendChild(select);
-
         const info = document.createElement("div");
         info.className = "etat-collabo";
         chambreDiv.appendChild(info);
-
         const chambreRef = ref(db, `chambres/${num}`);
 
         onValue(chambreRef, snapshot => {
@@ -153,12 +156,10 @@
           }
         });
 
-       etat.onclick = () => {
+        etat.onclick = () => {
           const current = etats.indexOf(etat.textContent);
           const next = etats[(current + 1) % etats.length];
           update(chambreRef, { etat: next, collaborateur: select.value });
-
-          // mise à jour DOM immédiate
           etat.textContent = next;
           etat.className = next;
           chambreDiv.className = `chambre ${next}`;
@@ -168,29 +169,76 @@
 
         select.onchange = () => {
           update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
-
-        };
-
-        select.onchange = () => {
-          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
-
-          // mise à jour DOM immédiate
           etat.className = etat.textContent;
           chambreDiv.className = `chambre ${etat.textContent}`;
           info.textContent = etat.textContent.toUpperCase();
           chambreDiv.dataset.collaborateur = select.value;
         };
 
-        select.onchange = () => {
-          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
-        };
-
         wrap.appendChild(chambreDiv);
+        chambreElements.push(chambreDiv);
       });
 
       section.appendChild(wrap);
       container.appendChild(section);
     });
+
+    document.getElementById("resetBtn").onclick = () => {
+      if (confirm("Tout remettre à zéro ?")) {
+        Object.values(data).flat().forEach(num => {
+          set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
+        });
+      }
+    };
+
+    document.getElementById("pdfBtn").onclick = () => {
+      const opt = {
+        margin: 0.2,
+        filename: `feuille-chambres-${new Date().toISOString().slice(0,10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(document.body).save();
+    };
+
+    function updateResume() {
+      const stats = {};
+      collaborateurs.forEach(c => stats[c] = {});
+      Object.values(data).flat().forEach(num => {
+        const chambreRef = ref(db, `chambres/${num}`);
+        onValue(chambreRef, snapshot => {
+          const val = snapshot.val();
+          if (!val || val.collaborateur === "---") return;
+          const c = val.collaborateur;
+          const e = val.etat;
+          stats[c][e] = (stats[c][e] || 0) + 1;
+          renderResume(stats);
+        }, { onlyOnce: true });
+      });
+    }
+
+    function renderResume(stats) {
+      const container = document.getElementById("resume");
+      container.innerHTML = '<h2>Résumé par collaborateur</h2>';
+      Object.entries(stats).forEach(([collab, etats]) => {
+        if (Object.keys(etats).length === 0) return;
+        const div = document.createElement("div");
+        div.innerHTML = `<strong>${collab}</strong> : ` +
+          Object.entries(etats).map(([etat, n]) => `${etatLabels[etat]} (${n})`).join(", ");
+        container.appendChild(div);
+      });
+    }
+
+    updateResume();
+    setInterval(updateResume, 5000);
+
+    const now = new Date();
+    const millisTillMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0, 0) - now;
+    setTimeout(() => {
+      document.getElementById("pdfBtn").click();
+      setInterval(() => document.getElementById("pdfBtn").click(), 24 * 60 * 60 * 1000);
+    }, millisTillMidnight);
   </script>
 </body>
 </html>
