@@ -157,6 +157,23 @@
           const current = etats.indexOf(etat.textContent);
           const next = etats[(current + 1) % etats.length];
           update(chambreRef, { etat: next, collaborateur: select.value });
+
+          // mise à jour DOM immédiate
+          etat.textContent = next;
+          etat.className = next;
+          chambreDiv.className = `chambre ${next}`;
+          info.textContent = next.toUpperCase();
+          chambreDiv.dataset.collaborateur = select.value;
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+
+          // mise à jour DOM immédiate
+          etat.className = etat.textContent;
+          chambreDiv.className = `chambre ${etat.textContent}`;
+          info.textContent = etat.textContent.toUpperCase();
+          chambreDiv.dataset.collaborateur = select.value;
         };
 
         select.onchange = () => {
