@@ -3,16 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RoomControl (Accès sécurisé)</title>
+  <title>RoomControl (temps réel ADMIN)</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <style>
     body { font-family: Arial; background: #f5f5f5; padding: 2rem; }
-    .hidden { display: none; }
-    .login { max-width: 300px; margin: 100px auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    .login h2 { margin-bottom: 1rem; }
-    .login input { width: 100%; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; }
-    .login button { width: 100%; padding: 0.5rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .admin-only { display: none; }
     .etage { margin-bottom: 2rem; page-break-after: always; }
     .chambres { display: flex; flex-wrap: wrap; gap: 10px; }
     .chambre { background: white; padding: 1rem; border-radius: 8px; min-width: 100px; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
@@ -31,209 +25,174 @@
     .quick { background: black; color: white; }
     .inoccupée { background: lightgray; color: black; }
     .npd { background: purple; color: white; }
-    #pdfBtn, #resetBtn { margin-right: 10px; margin-bottom: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+    .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
     .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; position: relative; text-align: center; min-width: 75px; }
     .etat-item::after { content: attr(data-index); display: block; font-size: 0.75rem; color: black; margin-top: 2px; }
+    .etat-item.non_vendue { background: grey; }
+    .etat-item.depart { background: red; color: black; }
+    .etat-item.recouche { background: navy; color: #87cefa; }
+    .etat-item.recouche_non_faire { background: #87cefa; color: black; }
+    .etat-item.parfum { background: pink; color: red; }
+    .etat-item.inoccupée { background: lightgray; color: black; }
+    .etat-item.npd { background: purple; color: white; }
+    .etat-item.prete { background: yellow; color: black; }
+    .etat-item.bloquee { background: orange; color: black; }
+    .etat-item.maintenance { background: white; color: #ccc; border: 1px solid #ccc; }
+    .etat-item.urgence_parfum { background: red; color: white; }
+    .etat-item.bloquee_videe { background: orange; color: white; }
+    .etat-item.quick { background: black; color: white; }
+    #controls { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <div id="login" class="login">
-    <h2>Connexion</h2>
-    <input type="password" id="password" placeholder="Mot de passe">
-    <button onclick="checkPassword()">Entrer</button>
+  <h1>RoomControl (temps réel ADMIN)</h1>
+  <div id="controls">
+    <button id="resetBtn">Tout réinitialiser</button>
+    <button id="pdfBtn">Télécharger PDF</button>
   </div>
-
-  <div id="content" class="hidden">
-    <h1>RoomControl (temps réel)</h1>
-    <div id="app"></div>
-    <div id="summary" class="recapitulatif admin-only"></div>
-  </div>
+  <div id="app"></div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-    import { getDatabase, ref, set, update, onValue, get } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+    import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
-    window.checkPassword = () => {
-      const input = document.getElementById("password").value.trim();
-      window.userRole = input === "admin123" ? 'admin' : input === "agent456" ? 'agent' : '';
-      if (!window.userRole) return alert("Mot de passe incorrect");
-      document.getElementById("login").classList.add("hidden");
-      document.getElementById("content").classList.remove("hidden");
-      if (window.userRole === 'admin') {
-        document.querySelectorAll('.admin-only').forEach(e => e.style.display = 'inline-block');
-      }
-      initApp();
+    const firebaseConfig = {
+      apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
+      authDomain: "roomcontrol-2a204.firebaseapp.com",
+      databaseURL: "https://roomcontrol-2a204-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "roomcontrol-2a204",
+      storageBucket: "roomcontrol-2a204.appspot.com",
+      messagingSenderId: "558206279775",
+      appId: "1:558206279775:web:d2cea568f73258dc31fbea"
     };
 
-    function initApp() {
-      const firebaseConfig = {
-        apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
-        authDomain: "roomcontrol-2a204.firebaseapp.com",
-        databaseURL: "https://roomcontrol-2a204-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "roomcontrol-2a204",
-        storageBucket: "roomcontrol-2a204.appspot.com",
-        messagingSenderId: "558206279775",
-        appId: "1:558206279775:web:d2cea568f73258dc31fbea"
-      };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-      const app = initializeApp(firebaseConfig);
-      const db = getDatabase(app);
+    const etats = ['non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
 
-      const etats = ['non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
-      const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
-      const etatLabels = Object.fromEntries(etats.map(e => [e, e.toUpperCase()]));
+    const etatLabels = {
+      non_vendue: "NON VENDUE",
+      depart: "DEPART",
+      recouche: "RECOUCHE",
+      recouche_non_faire: "RECOUCHE NON FAIRE",
+      parfum: "PARFUM",
+      inoccupée: "INOCCUPÉE",
+      npd: "NPD",
+      prete: "PRÊTE",
+      bloquee: "BLOQUÉE",
+      maintenance: "MAINTENANCE",
+      urgence_parfum: "URGENCE PARFUM",
+      bloquee_videe: "BLOQUÉE VIDÉE",
+      quick: "QUICK"
+    };
 
-      const data = {
-        "Rez-de-chaussée": [16,17,18,20,21,22,23,24,25,26,27,28,29],
-        "1er étage": [101,103,104,105,106,107,108,110,111,112,113,114,115,116,117,118,120,121,122,123,124,125,126,127,128,129],
-        "2e étage": [201,203,204,205,206,207,208,210,211,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229],
-        "3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329]
-      };
+    const data = {
+      "Rez-de-chaussée": [16,17,18,20,21,22,23,24,25,26,27,28,29],
+      "1er étage": [101,103,104,105,106,107,108,110,111,112,113,114,115,116,117,118,120,121,122,123,124,125,126,127,128,129],
+      "2e étage": [201,203,204,205,206,207,208,210,211,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229],
+      "3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329]
+    };
 
-      const container = document.getElementById("app");
-      const controls = document.createElement("div");
-      controls.innerHTML = `
-        <button id="pdfBtn" class="admin-only">Télécharger PDF</button>
-        <button id="resetBtn" class="admin-only">Tout réinitialiser</button>
-        <label class="admin-only">Filtrer par collaborateur :</label>
-        <select id="filterSelect" class="admin-only">
-          <option value="">-- Tous --</option>
-          ${collaborateurs.map(c => `<option value="${c}">${c}</option>`).join('')}
-        </select>
-      `;
-      container.appendChild(controls);
+    const container = document.getElementById("app");
 
-      const legendDiv = document.createElement("div");
-      legendDiv.className = "legend";
-      etats.forEach((etat, i) => {
-        const span = document.createElement("span");
-        span.className = `etat-item ${etat}`;
-        span.setAttribute("data-index", i + 1);
-        span.textContent = etatLabels[etat];
-        legendDiv.appendChild(span);
-      });
-      container.appendChild(legendDiv);
+    const legendDiv = document.createElement("div");
+    legendDiv.className = "legend";
+    Object.entries(etatLabels).forEach(([etat, label], index) => {
+      const span = document.createElement("span");
+      span.className = `etat-item ${etat}`;
+      span.setAttribute("data-index", index + 1);
+      span.textContent = label;
+      legendDiv.appendChild(span);
+    });
+    container.appendChild(legendDiv);
 
-      const chambreElements = [];
+    Object.entries(data).forEach(([etage, chambres]) => {
+      const section = document.createElement("div");
+      section.className = "etage print-page";
+      const title = document.createElement("h2");
+      title.textContent = etage;
+      section.appendChild(title);
 
-      Object.entries(data).forEach(([etage, chambres]) => {
-        const section = document.createElement("div");
-        section.className = "etage print-page";
-        section.innerHTML = `<h2>${etage}</h2>`;
+      const wrap = document.createElement("div");
+      wrap.className = "chambres";
 
-        const wrap = document.createElement("div");
-        wrap.className = "chambres";
+      chambres.forEach(num => {
+        const chambreDiv = document.createElement("div");
+        chambreDiv.className = "chambre";
 
-        chambres.forEach(num => {
-          const chambreDiv = document.createElement("div");
-          chambreDiv.className = "chambre";
-          chambreDiv.innerHTML = `<div>${num}</div>`;
+        const titre = document.createElement("div");
+        titre.textContent = `${num}`;
+        chambreDiv.appendChild(titre);
 
-          const etat = document.createElement("button");
-          const select = document.createElement("select");
-          const info = document.createElement("div");
-          info.className = "etat-collabo";
+        const etat = document.createElement("button");
+        chambreDiv.appendChild(etat);
 
-          collaborateurs.forEach(name => {
-            const opt = document.createElement("option");
-            opt.value = name;
-            opt.textContent = name;
-            select.appendChild(opt);
-          });
+        const select = document.createElement("select");
+        collaborateurs.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+        chambreDiv.appendChild(select);
 
-          chambreDiv.append(etat, select, info);
-          wrap.appendChild(chambreDiv);
-          chambreElements.push(chambreDiv);
+        const info = document.createElement("div");
+        info.className = "etat-collabo";
+        chambreDiv.appendChild(info);
 
-          const chambreRef = ref(db, `chambres/${num}`);
+        const chambreRef = ref(db, `chambres/${num}`);
 
-          onValue(chambreRef, snapshot => {
-            const val = snapshot.val();
-            if (val) {
-              etat.textContent = val.etat;
-              etat.className = val.etat;
-              select.value = val.collaborateur || "---";
-              chambreDiv.className = `chambre ${val.etat}`;
-              info.textContent = val.etat.toUpperCase();
-              chambreDiv.dataset.collaborateur = val.collaborateur;
-            }
-          });
-
-          etat.onclick = () => {
-            const current = etats.indexOf(etat.textContent);
-            const next = etats[(current + 1) % etats.length];
-            update(chambreRef, { etat: next, collaborateur: select.value });
-          };
-
-          select.onchange = () => {
-            update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
-          };
+        onValue(chambreRef, snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            etat.textContent = val.etat;
+            etat.className = val.etat;
+            select.value = val.collaborateur || "---";
+            chambreDiv.className = `chambre ${val.etat}`;
+            info.textContent = val.etat.toUpperCase();
+            chambreDiv.dataset.collaborateur = val.collaborateur;
+          } else {
+            update(chambreRef, { etat: 'non_vendue', collaborateur: '---' });
+          }
         });
 
-        section.appendChild(wrap);
-        container.appendChild(section);
+        etat.onclick = () => {
+          const current = etats.indexOf(etat.textContent);
+          const next = etats[(current + 1) % etats.length];
+          update(chambreRef, { etat: next, collaborateur: select.value });
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+        };
+
+        wrap.appendChild(chambreDiv);
       });
 
-      function mettreAJourRésumé() {
-        get(ref(db, 'chambres')).then(snapshot => {
-          const data = snapshot.val();
-          const résumé = {};
-          collaborateurs.forEach(nom => résumé[nom] = {});
-          Object.entries(data || {}).forEach(([num, chambre]) => {
-            if (chambre.collaborateur && chambre.collaborateur !== "---") {
-              const nom = chambre.collaborateur;
-              const etat = chambre.etat;
-              if (!résumé[nom][etat]) résumé[nom][etat] = 0;
-              résumé[nom][etat]++;
-            }
-          });
-          const conteneur = document.getElementById("summary");
-          conteneur.innerHTML = '<h2>Résumé par collaborateur</h2>';
-          const ul = document.createElement("ul");
-          Object.entries(résumé).forEach(([nom, stats]) => {
-            if (Object.keys(stats).length > 0) {
-              const li = document.createElement("li");
-              const résuméTexte = Object.entries(stats).map(([etat, count]) => `${etat.toUpperCase()}: ${count}`).join(", ");
-              li.textContent = `${nom} → ${résuméTexte}`;
-              ul.appendChild(li);
-            }
-          });
-          conteneur.appendChild(ul);
+      section.appendChild(wrap);
+      container.appendChild(section);
+    });
+
+    document.getElementById("resetBtn").onclick = () => {
+      if (confirm("Tout remettre à zéro ?")) {
+        Object.values(data).flat().forEach(num => {
+          set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
         });
       }
+    };
 
-      mettreAJourRésumé();
-      setInterval(mettreAJourRésumé, 5000);
-
-      document.getElementById("pdfBtn")?.addEventListener("click", () => {
-        mettreAJourRésumé();
-        setTimeout(() => {
-          html2pdf().set({
-            margin: 0.2,
-            filename: 'feuille-chambres.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 1.5 },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-          }).from(document.body).save();
-        }, 500);
-      });
-
-      document.getElementById("resetBtn")?.addEventListener("click", () => {
-        if (confirm("Tout remettre à zéro ?")) {
-          Object.values(data).flat().forEach(num => {
-            set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
-          });
-        }
-      });
-
-      document.getElementById("filterSelect")?.addEventListener("change", e => {
-        const value = e.target.value;
-        chambreElements.forEach(div => {
-          div.style.display = (!value || div.dataset.collaborateur === value) ? "block" : "none";
-        });
-      });
-    }
+    document.getElementById("pdfBtn").onclick = () => {
+      const opt = {
+        margin: 0.2,
+        filename: 'feuille-chambres.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(document.body).save();
+    };
   </script>
 </body>
 </html>
