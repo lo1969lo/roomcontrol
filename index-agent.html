@@ -153,7 +153,7 @@
           }
         });
 
-        etat.onclick = () => {
+       etat.onclick = () => {
           const current = etats.indexOf(etat.textContent);
           const next = etats[(current + 1) % etats.length];
           update(chambreRef, { etat: next, collaborateur: select.value });
@@ -164,6 +164,11 @@
           chambreDiv.className = `chambre ${next}`;
           info.textContent = next.toUpperCase();
           chambreDiv.dataset.collaborateur = select.value;
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+
         };
 
         select.onchange = () => {
