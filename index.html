@@ -30,10 +30,11 @@
       margin: 1rem 0;
       display: flex;
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       gap: 8px;
       align-items: center;
       justify-content: flex-start;
+      overflow-x: auto;
     }
     .etat-item {
       padding: 5px 10px;
@@ -43,6 +44,7 @@
       position: relative;
       text-align: center;
       min-width: 75px;
+      white-space: nowrap;
     }
     .etat-item::after {
       content: attr(data-index);
@@ -153,10 +155,15 @@
         const current = etats.indexOf(etat.textContent);
         const next = etats[(current + 1) % etats.length];
         update(chambreRef, { etat: next, collaborateur: select.value });
+        etat.textContent = next;
+        etat.className = next;
+        chambreDiv.className = `chambre ${next}`;
+        info.textContent = next.toUpperCase();
       };
 
       select.onchange = () => {
         update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+        chambreDiv.dataset.collaborateur = select.value;
       };
 
       wrap.appendChild(chambreDiv);
