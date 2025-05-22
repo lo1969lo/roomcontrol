@@ -4,7 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RoomControl (temps réel)</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js">
+  // Insérer la date du jour
+  document.getElementById("currentDate").textContent = new Date().toLocaleDateString('fr-FR');
+
+  // Ajouter les collaborateurs au filtre
+  const filtreSelect = document.getElementById("filtre");
+  collaborateurs.forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    filtreSelect.appendChild(opt);
+  });
+
+  filtreSelect.onchange = () => {
+    const selected = filtreSelect.value;
+    document.querySelectorAll('.chambre').forEach(chambre => {
+      const selectedCollab = chambre.querySelector('select').value;
+      chambre.style.display = selected === 'all' || selectedCollab === selected ? '' : 'none';
+    });
+  };
+
+  document.getElementById("exportPDF").onclick = () => {
+    const opt = {
+      margin: 0.2,
+      filename: `etat-general-${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(document.getElementById("etat-general")).save();
+  };
+</script>
   <style>
     body { font-family: Arial; background: #f5f5f5; padding: 2rem; }
     .etage { margin-bottom: 2rem; page-break-after: always; }
@@ -125,6 +156,16 @@
   <h1 id="titre">RoomControl (temps réel)</h1>
 
   <div id="etat-general">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <div><strong>Date :</strong> <span id="currentDate"></span></div>
+      <div>
+        <label for="filtre">Filtrer par collaborateur :</label>
+        <select id="filtre">
+          <option value="all">Tous</option>
+        </select>
+        <button id="exportPDF">Exporter PDF</button>
+      </div>
+    </div>
     <h2>État Général</h2>
     <table id="statsTable">
       <thead>
