@@ -21,7 +21,7 @@
     .chambre.active {
       outline: 3px dashed #007bff;
       outline-offset: -5px;
-      animation: pulseOutline 1.5s infinite;
+      animation: pulseOutline 1s;
     }
     @keyframes pulseOutline {
       0% { outline-color: #007bff; }
@@ -38,12 +38,42 @@
       align-items: center;
       justify-content: center;
     }
+    button, select {
+      margin-top: 0.3rem;
+      padding: 0.3rem;
+      width: 100%;
+      font-size: 0.85rem;
+      height: 2rem;
+    }
+    .blanc { background: white; color: black; border: 1px solid #ccc; }
+    .depart { background: red; color: black; }
+    .recouche { background: navy; color: #87cefa; }
+    .recouche_non_faire { background: #87cefa; color: black; }
+    .parfum { background: pink; color: red; }
+    .prete { background: yellow; color: black; }
+    .bloquee { background: orange; color: white; }
+    .maintenance { background: white; color: black; border: 2px solid #ccc; }
+    .urgence_parfum { background: red; color: white; }
+    .bloquee_videe { background: orange; color: white; }
+    .quick { background: black; color: white; }
+    .inoccupée { background: lightgray; color: black; }
+    .npd { background: purple; color: white; }
     .legend {
       margin: 1rem 0;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: flex-end;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      gap: 10px;
+    }
+    .etat-item {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      min-width: 75px;
+      text-align: center;
+      white-space: nowrap;
+      color: white;
     }
     #etat-general {
       margin-top: 3rem;
@@ -59,6 +89,8 @@
 </head>
 <body>
   <h1 id="titre">RoomControl (temps réel)</h1>
+
+  <div class="legend" id="legend"></div>
   <div id="app"></div>
 
   <div id="etat-general">
@@ -91,16 +123,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
     import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
-      authDomain: "roomcontrol-2a204.firebaseapp.com",
-      databaseURL: "https://roomcontrol-2a204-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "roomcontrol-2a204",
-      storageBucket: "roomcontrol-2a204.appspot.com",
-      messagingSenderId: "558206279775",
-      appId: "1:558206279775:web:d2cea568f73258dc31fbea"
-    };
-
+    const firebaseConfig = { apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY", authDomain: "roomcontrol-2a204.firebaseapp.com", databaseURL: "https://roomcontrol-2a204-default-rtdb.europe-west1.firebasedatabase.app", projectId: "roomcontrol-2a204", storageBucket: "roomcontrol-2a204.appspot.com", messagingSenderId: "558206279775", appId: "1:558206279775:web:d2cea568f73258dc31fbea" };
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
@@ -111,6 +134,14 @@
       maintenance: "MAINTENANCE", urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
     };
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
+
+    const legend = document.getElementById("legend");
+    etats.forEach(etat => {
+      const el = document.createElement("div");
+      el.className = `etat-item ${etat}`;
+      el.textContent = etatLabels[etat];
+      legend.appendChild(el);
+    });
 
     const stats = {};
     collaborateurs.forEach(name => {
@@ -158,6 +189,7 @@
         const chambreDiv = document.createElement("div");
         chambreDiv.className = "chambre";
         chambreDiv.dataset.id = num;
+
         const titre = document.createElement("div");
         titre.textContent = num;
         chambreDiv.appendChild(titre);
@@ -179,7 +211,6 @@
         chambreDiv.appendChild(info);
 
         wrap.appendChild(chambreDiv);
-        section.appendChild(wrap);
 
         const chambreRef = ref(db, `chambres/${num}`);
         let currentIndex = 0;
@@ -200,6 +231,8 @@
           currentIndex = (currentIndex + 1) % etats.length;
           const newEtat = etats[currentIndex];
           update(chambreRef, { etat: newEtat, collaborateur: select.value });
+          chambreDiv.classList.add("active");
+          setTimeout(() => chambreDiv.classList.remove("active"), 1000);
         };
 
         select.onchange = () => {
@@ -208,6 +241,7 @@
         };
       });
 
+      section.appendChild(wrap);
       appDiv.appendChild(section);
     });
 
