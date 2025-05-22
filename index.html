@@ -278,6 +278,22 @@
 
       select.onchange = () => {
         update(chambreRef, { etat: etats[currentIndex], collaborateur: select.value });
+
+        // Recalculer les statistiques dynamiquement
+        Object.values(stats).forEach(collabStats => {
+          collabStats.total = 0;
+          etats.forEach(e => collabStats[e] = 0);
+        });
+        document.querySelectorAll('.chambre').forEach(div => {
+          const selectEl = div.querySelector('select');
+          const collab = selectEl?.value;
+          const etatClass = etats.find(e => div.classList.contains(e));
+          if (collab && etatClass && stats[collab]) {
+            stats[collab].total++;
+            stats[collab][etatClass]++;
+          }
+        });
+        updateStats();
       };
 
       wrap.appendChild(chambreDiv);
