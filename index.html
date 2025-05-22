@@ -226,91 +226,77 @@
   });
   appDiv.appendChild(legendDiv);
 
-  Object.entries(data).forEach(([etage, chambres]) => {
-    const section = document.createElement("div");
-    section.className = "etage";
-    const title = document.createElement("h2");
-    title.textContent = etage;
-    section.appendChild(title);
-    const wrap = document.createElement("div");
-    wrap.className = "chambres";
+  onValue(ref(db, 'chambres'), (snapshot) => {
+    // Réinitialiser stats
+    Object.values(stats).forEach(s => {
+      s.total = 0;
+      etats.forEach(e => s[e] = 0);
+    });
+    
+    document.querySelectorAll('.chambre').forEach(div => div.remove());
 
-    chambres.forEach(num => {
-      const chambreDiv = document.createElement("div");
-      chambreDiv.className = "chambre";
-      chambreDiv.dataset.id = num;
-      const titre = document.createElement("div");
-      titre.textContent = `${num}`;
-      chambreDiv.appendChild(titre);
+    Object.entries(data).forEach(([etage, chambres]) => {
+      const section = document.createElement("div");
+      section.className = "etage";
+      const title = document.createElement("h2");
+      title.textContent = etage;
+      section.appendChild(title);
+      const wrap = document.createElement("div");
+      wrap.className = "chambres";
 
-      const etatBtn = document.createElement("button");
-      chambreDiv.appendChild(etatBtn);
+      chambres.forEach(num => {
+        const chambreData = snapshot.val()?.[num] || { etat: 'blanc', collaborateur: '---' };
+        const chambreDiv = document.createElement("div");
+        chambreDiv.className = `chambre ${chambreData.etat}`;
+        chambreDiv.dataset.id = num;
 
-      const select = document.createElement("select");
-      collaborateurs.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        select.appendChild(opt);
-      });
-      chambreDiv.appendChild(select);
+        const titre = document.createElement("div");
+        titre.textContent = `${num}`;
+        chambreDiv.appendChild(titre);
 
-      const info = document.createElement("div");
-      info.className = "etat-collabo";
-      chambreDiv.appendChild(info);
+        const etatBtn = document.createElement("button");
+        etatBtn.textContent = etatLabels[chambreData.etat];
+        etatBtn.className = chambreData.etat;
+        chambreDiv.appendChild(etatBtn);
 
-      let currentIndex = 0;
-      const chambreRef = ref(db, `chambres/${num}`);
-      onValue(chambreRef, snapshot => {
-        const val = snapshot.val();
-        if (val && etats.includes(val.etat)) {
-          currentIndex = etats.indexOf(val.etat);
-          etatBtn.textContent = etatLabels[val.etat];
-          etatBtn.className = val.etat;
-          chambreDiv.className = `chambre ${val.etat}`;
-          info.textContent = etatLabels[val.etat];
-          select.value = val.collaborateur || "---";
-          addStat(val.etat, val.collaborateur);
-          updateStats();
-        }
-      });
-
-      etatBtn.onclick = () => {
-        currentIndex = (currentIndex + 1) % etats.length;
-        const nextEtat = etats[currentIndex];
-        update(chambreRef, { etat: nextEtat, collaborateur: select.value });
-        etatBtn.textContent = etatLabels[nextEtat];
-        etatBtn.className = nextEtat;
-        chambreDiv.className = `chambre ${nextEtat} active`;
-        info.textContent = etatLabels[nextEtat];
-        setTimeout(() => chambreDiv.classList.remove("active"), 1500);
-      };
-
-      select.onchange = () => {
-        update(chambreRef, { etat: etats[currentIndex], collaborateur: select.value });
-
-        // Recalculer les statistiques dynamiquement
-        Object.values(stats).forEach(collabStats => {
-          collabStats.total = 0;
-          etats.forEach(e => collabStats[e] = 0);
+        const select = document.createElement("select");
+        collaborateurs.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
         });
-        document.querySelectorAll('.chambre').forEach(div => {
-          const selectEl = div.querySelector('select');
-          const collab = selectEl?.value;
-          const etatClass = etats.find(e => div.classList.contains(e));
-          if (collab && etatClass && stats[collab]) {
-            stats[collab].total++;
-            stats[collab][etatClass]++;
-          }
-        });
-        updateStats();
-      };
+        select.value = chambreData.collaborateur || '---';
+        chambreDiv.appendChild(select);
 
-      wrap.appendChild(chambreDiv);
+        const info = document.createElement("div");
+        info.className = "etat-collabo";
+        info.textContent = etatLabels[chambreData.etat];
+        chambreDiv.appendChild(info);
+
+        let currentIndex = etats.indexOf(chambreData.etat);
+        const chambreRef = ref(db, `chambres/${num}`);
+
+        etatBtn.onclick = () => {
+          currentIndex = (currentIndex + 1) % etats.length;
+          const nextEtat = etats[currentIndex];
+          update(chambreRef, { etat: nextEtat, collaborateur: select.value });
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etats[currentIndex], collaborateur: select.value });
+        };
+
+        addStat(chambreData.etat, chambreData.collaborateur);
+        wrap.appendChild(chambreDiv);
+      });
+
+      section.appendChild(wrap);
+      appDiv.appendChild(section);
     });
 
-    section.appendChild(wrap);
-    appDiv.appendChild(section);
+    updateStats();
+  });
   });
   window.initUI = function () {
     document.getElementById("currentDate").textContent = new Date().toLocaleDateString('fr-FR');
