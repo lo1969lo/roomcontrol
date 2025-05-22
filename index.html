@@ -52,13 +52,13 @@
     .recouche_non_faire { background: #87cefa; color: black; }
     .parfum { background: pink; color: red; }
     .prete { background: yellow; color: black !important; }
-    .bloquee { background: orange; color: black; }
+    .bloquee { background: orange; color: white !important; }
     .maintenance { background: white; color: #ccc; border: 2px solid #ccc; }
     .urgence_parfum { background: red; color: white; }
     .bloquee_videe { background: orange; color: white; }
     .quick { background: black; color: white; }
     .inoccupée { background: lightgray; color: black; }
-    .npd { background: purple; color: white; }
+    .npd { background: purple; color: white !important; }
     .legend {
       margin: 1rem 0;
       display: flex;
@@ -76,8 +76,10 @@
       min-width: 75px;
       cursor: pointer;
     }
-    .etat-item[data-index="10"], .etat-item[data-index="1"], .etat-item.prete {
-      color: black !important;
+    .etat-item[data-index="3"]::after,
+    .etat-item[data-index="7"]::after,
+    .etat-item[data-index="13"]::after {
+      color: white !important;
     }
     .etat-item::after {
       content: attr(data-index);
@@ -98,9 +100,7 @@
 </head>
 <body>
   <h1 id="titre">RoomControl (temps réel)</h1>
-  <div id="controls"></div>
   <div id="app"></div>
-  <div id="resume"></div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
@@ -147,7 +147,7 @@
 
     Object.entries(data).forEach(([etage, chambres]) => {
       const section = document.createElement("div");
-      section.className = "etage print-page";
+      section.className = "etage";
       const title = document.createElement("h2");
       title.textContent = etage;
       section.appendChild(title);
@@ -195,6 +195,8 @@
           currentIndex = (currentIndex + 1) % etats.length;
           const nextEtat = etats[currentIndex];
           update(chambreRef, { etat: nextEtat, collaborateur: select.value });
+          chambreDiv.classList.add("active");
+          setTimeout(() => chambreDiv.classList.remove("active"), 1500);
         };
 
         select.onchange = () => {
