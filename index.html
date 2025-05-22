@@ -14,7 +14,6 @@
     .etat-collabo { margin-top: 0.5rem; font-size: 0.85rem; font-weight: bold; color: #222; text-transform: uppercase; height: 1.5rem; display: flex; align-items: center; justify-content: center; }
     button, select { margin-top: 0.3rem; padding: 0.3rem; width: 100%; font-size: 0.85rem; height: 2rem; }
     .blanc { background: white; color: black; border: 1px solid #ccc; }
-    .non_vendue { background: grey; color: white; }
     .depart { background: red; color: black; }
     .recouche { background: navy; color: #87cefa; }
     .recouche_non_faire { background: #87cefa; color: black; }
@@ -32,12 +31,16 @@
     .etat-item::after { content: attr(data-index); display: block; font-size: 0.75rem; color: black; margin-top: 2px; }
     #resume { margin-top: 2rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     #resume h2 { margin-bottom: 1rem; }
+    #muteToggle { float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
   </style>
 </head>
 <body>
   <audio id="notifSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
-  <h1 id="titre"></h1>
-  <div id="controls"></div>
+  <h1 id="titre">RoomControl (temps réel)</h1>
+  <div id="controls">
+    <button id="pdfBtn">Télécharger PDF</button>
+    <button id="muteToggle" title="Activer/Désactiver le son">🔇</button>
+  </div>
   <div id="app"></div>
   <div id="resume"></div>
 
@@ -57,14 +60,19 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    let soundEnabled = true;
+    const notifSound = document.getElementById("notifSound");
+    document.getElementById("muteToggle").onclick = () => {
+      soundEnabled = !soundEnabled;
+      document.getElementById("muteToggle").textContent = soundEnabled ? "🔊" : "🔇";
+    };
 
-    const etats = ['blanc','non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const etats = ['blanc','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
     const etatLabels = {
-      blanc: "BLANC", non_vendue: "NON VENDUE", depart: "DEPART", recouche: "RECOUCHE",
-      recouche_non_faire: "RECOUCHE NON FAIRE", parfum: "PARFUM", inoccupée: "INOCCUPÉE",
-      npd: "NPD", prete: "PRÊTE", bloquee: "BLOQUÉE", maintenance: "MAINTENANCE",
-      urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
+      blanc: "BLANC", depart: "DEPART", recouche: "RECOUCHE", recouche_non_faire: "RECOUCHE NON FAIRE",
+      parfum: "PARFUM", inoccupée: "INOCCUPÉE", npd: "NPD", prete: "PRÊTE", bloquee: "BLOQUÉE",
+      maintenance: "MAINTENANCE", urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
     };
 
     const data = {
@@ -74,22 +82,12 @@
       "3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329]
     };
 
-    const mode = window.location.href.includes("agent") ? "agent" : "admin";
-    document.getElementById("titre").textContent = mode === "agent" ? "RoomControl (temps réel AGENT)" : "RoomControl (temps réel ADMIN)";
-
-    const notifSound = document.getElementById("notifSound");
-
-    const controls = document.getElementById("controls");
-    if (mode === "admin") {
-      controls.innerHTML = `<button id="resetBtn">Tout réinitialiser</button><button id="pdfBtn">Télécharger PDF</button>`;
-    }
-
     const legendDiv = document.createElement("div");
     legendDiv.className = "legend";
     Object.entries(etatLabels).forEach(([etat, label], index) => {
       const span = document.createElement("span");
       span.className = `etat-item ${etat}`;
-      span.setAttribute("data-index", index);
+      span.setAttribute("data-index", index + 1);
       span.textContent = label;
       legendDiv.appendChild(span);
     });
@@ -127,7 +125,6 @@
         onValue(chambreRef, snapshot => {
           const val = snapshot.val();
           if (val) {
-            console.log(`CHAMBRE ${num} ➞ ${val.etat.toUpperCase()} | ${val.collaborateur}`);
             etat.textContent = val.etat;
             etat.className = val.etat;
             select.value = val.collaborateur || "---";
@@ -135,24 +132,23 @@
             info.textContent = val.etat.toUpperCase();
             chambreDiv.dataset.collaborateur = val.collaborateur;
             chambreDiv.classList.add("highlight");
-            notifSound.currentTime = 0;
-            notifSound.play();
+            if (soundEnabled) {
+              notifSound.currentTime = 0;
+              notifSound.play();
+            }
             setTimeout(() => chambreDiv.classList.remove("highlight"), 1000);
           } else {
-            update(chambreRef, { etat: 'non_vendue', collaborateur: '---' });
+            update(chambreRef, { etat: 'blanc', collaborateur: '---' });
           }
         });
-
         etat.onclick = () => {
           const current = etats.indexOf(etat.textContent);
           const next = etats[(current + 1) % etats.length];
           update(chambreRef, { etat: next, collaborateur: select.value });
         };
-
         select.onchange = () => {
           update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
         };
-
         wrap.appendChild(chambreDiv);
         chambreElements.push(chambreDiv);
       });
@@ -160,26 +156,16 @@
       document.getElementById("app").appendChild(section);
     });
 
-    if (mode === "admin") {
-      document.getElementById("resetBtn").onclick = () => {
-        if (confirm("Tout remettre à zéro ?")) {
-          Object.values(data).flat().forEach(num => {
-            set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
-          });
-        }
+    document.getElementById("pdfBtn").onclick = () => {
+      const opt = {
+        margin: 0.2,
+        filename: `feuille-chambres-${new Date().toISOString().slice(0,10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 1.5 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
       };
-
-      document.getElementById("pdfBtn").onclick = () => {
-        const opt = {
-          margin: 0.2,
-          filename: `feuille-chambres-${new Date().toISOString().slice(0,10)}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 1.5 },
-          jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-        };
-        html2pdf().set(opt).from(document.body).save();
-      };
-    }
+      html2pdf().set(opt).from(document.body).save();
+    };
   </script>
 </body>
 </html>
