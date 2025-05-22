@@ -28,6 +28,7 @@
     .npd { background: purple; color: white; }
     .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
     .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; position: relative; text-align: center; min-width: 75px; }
+    .etat-item[data-index="10"] { color: black !important; }
     .etat-item::after { content: attr(data-index); display: block; font-size: 0.75rem; color: black; margin-top: 2px; }
     #resume { margin-top: 2rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     #resume h2 { margin-bottom: 1rem; }
@@ -56,10 +57,10 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const etats = ['blanc','non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const etats = ['blanc','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
     const etatLabels = {
-      blanc: "BLANC", non_vendue: "NON VENDUE", depart: "DEPART", recouche: "RECOUCHE",
+      blanc: "LIBRE", depart: "DEPART", recouche: "RECOUCHE",
       recouche_non_faire: "RECOUCHE NON FAIRE", parfum: "PARFUM", inoccupée: "INOCCUPÉE",
       npd: "NPD", prete: "PRÊTE", bloquee: "BLOQUÉE", maintenance: "MAINTENANCE",
       urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
@@ -84,7 +85,7 @@
     Object.entries(etatLabels).forEach(([etat, label], index) => {
       const span = document.createElement("span");
       span.className = `etat-item ${etat}`;
-      span.setAttribute("data-index", index);
+      span.setAttribute("data-index", index + 1);
       span.textContent = label;
       legendDiv.appendChild(span);
     });
@@ -129,7 +130,7 @@
             info.textContent = val.etat.toUpperCase();
             chambreDiv.dataset.collaborateur = val.collaborateur;
           } else {
-            update(chambreRef, { etat: 'non_vendue', collaborateur: '---' });
+            update(chambreRef, { etat: 'blanc', collaborateur: '---' });
           }
         });
 
@@ -154,7 +155,7 @@
       document.getElementById("resetBtn").onclick = () => {
         if (confirm("Tout remettre à zéro ?")) {
           Object.values(data).flat().forEach(num => {
-            set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
+            set(ref(db, `chambres/${num}`), { etat: 'blanc', collaborateur: '---' });
           });
         }
       };
