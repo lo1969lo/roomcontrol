@@ -38,6 +38,30 @@
       align-items: center;
       justify-content: center;
     }
+    .recouche .etat-collabo { color: #87cefa; }
+    .npd .etat-collabo { color: white; }
+    .quick .etat-collabo { color: white; }
+    .maintenance .etat-collabo { color: black; }
+    button, select {
+      margin-top: 0.3rem;
+      padding: 0.3rem;
+      width: 100%;
+      font-size: 0.85rem;
+      height: 2rem;
+    }
+    .blanc { background: white; color: black !important; border: 1px solid #ccc; }
+    .depart { background: red; color: black; }
+    .recouche { background: navy; color: #87cefa; }
+    .recouche_non_faire { background: #87cefa; color: black; }
+    .parfum { background: pink; color: red; }
+    .prete { background: yellow; color: black !important; }
+    .bloquee { background: orange; color: white !important; }
+    .maintenance { background: white; color: black; border: 2px solid #ccc; }
+    .urgence_parfum { background: red; color: white; }
+    .bloquee_videe { background: orange; color: white; }
+    .quick { background: black; color: white; }
+    .inoccupée { background: lightgray; color: black; }
+    .npd { background: purple; color: white !important; }
     .legend {
       margin: 1rem 0;
       display: flex;
@@ -45,51 +69,52 @@
       gap: 8px;
       align-items: flex-end;
     }
-    #etat-general {
-      margin-top: 3rem;
-      padding: 1rem;
-      background: #e0e0e0;
-      border-radius: 8px;
+    .etat-item {
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      color: white;
+      position: relative;
+      text-align: center;
+      min-width: 75px;
+      cursor: pointer;
     }
-    #etat-general h2 { margin-bottom: 1rem; }
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #999; padding: 8px; text-align: center; font-size: 0.75rem; }
-    th { background: #f0f0f0; }
+    .etat-item[data-index="3"]::after,
+    .etat-item[data-index="7"]::after,
+    .etat-item[data-index="13"]::after {
+      color: white !important;
+    }
+    .etat-item[data-index="10"] {
+      color: black !important;
+    }
+    .etat-item[data-index="10"]::after {
+      content: "10";
+      color: black;
+    }
+    .etat-item::after {
+      content: attr(data-index);
+      display: block;
+      font-size: 0.75rem;
+      color: black;
+      margin-top: 2px;
+    }
+    #resume {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    #resume h2 { margin-bottom: 1rem; }
   </style>
 </head>
 <body>
   <h1 id="titre">RoomControl (temps réel)</h1>
   <div id="app"></div>
 
-  <div id="etat-general">
-    <h2>État Général</h2>
-    <table id="statsTable">
-      <thead>
-        <tr>
-          <th>Collaborateur</th>
-          <th>Total</th>
-          <th>LIBRE</th>
-          <th>DÉPART</th>
-          <th>RECOUCHE</th>
-          <th>RECOUCHE NON FAIRE</th>
-          <th>PARFUM</th>
-          <th>INOCCUPÉE</th>
-          <th>NPD</th>
-          <th>PRÊTE</th>
-          <th>BLOQUÉE</th>
-          <th>MAINTENANCE</th>
-          <th>URGENCE PARFUM</th>
-          <th>BLOQUÉE VIDÉE</th>
-          <th>QUICK</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-    import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+    import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
@@ -106,32 +131,12 @@
 
     const etats = ['blanc','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
     const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
-
-    const stats = {};
-    collaborateurs.forEach(name => {
-      stats[name] = { total: 0 };
-      etats.forEach(e => stats[name][e] = 0);
-    });
-
-    const updateStats = () => {
-      const tbody = document.querySelector("#statsTable tbody");
-      tbody.innerHTML = '';
-      Object.entries(stats).forEach(([collab, data]) => {
-        const row = `<tr>
-          <td>${collab}</td>
-          <td>${data.total}</td>
-          ${etats.map(e => `<td>${data[e]}</td>`).join('')}
-        </tr>`;
-        tbody.insertAdjacentHTML('beforeend', row);
-      });
+    const etatLabels = {
+      blanc: "LIBRE", depart: "DEPART", recouche: "RECOUCHE",
+      recouche_non_faire: "RECOUCHE NON FAIRE", parfum: "PARFUM", inoccupée: "INOCCUPÉE",
+      npd: "NPD", prete: "PRÊTE", bloquee: "BLOQUÉE", maintenance: "MAINTENANCE",
+      urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
     };
-
-    const addStat = (etat, collab) => {
-      if (!stats[collab]) return;
-      stats[collab].total++;
-      if (etats.includes(etat)) stats[collab][etat]++;
-    };
-
     const data = {
       "Rez-de-chaussée": [16,17,18,20,21,22,23,24,25,26,27,28,29],
       "1er étage": [101,103,104,105,106,107,108,110,111,112,113,114,115,116,117,118,120,121,122,123,124,125,126,127,128,129],
@@ -139,15 +144,79 @@
       "3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329]
     };
 
-    Object.values(data).flat().forEach(num => {
-      const chambreRef = ref(db, `chambres/${num}`);
-      onValue(chambreRef, snapshot => {
-        const val = snapshot.val();
-        if (val && val.collaborateur && val.collaborateur !== '---') {
-          addStat(val.etat, val.collaborateur);
-          updateStats();
-        }
+    const legendDiv = document.createElement("div");
+    legendDiv.className = "legend";
+    Object.entries(etatLabels).forEach(([etat, label], index) => {
+      const span = document.createElement("span");
+      span.className = `etat-item ${etat}`;
+      span.setAttribute("data-index", index + 1);
+      span.textContent = label;
+      legendDiv.appendChild(span);
+    });
+    document.getElementById("app").appendChild(legendDiv);
+
+    Object.entries(data).forEach(([etage, chambres]) => {
+      const section = document.createElement("div");
+      section.className = "etage";
+      const title = document.createElement("h2");
+      title.textContent = etage;
+      section.appendChild(title);
+      const wrap = document.createElement("div");
+      wrap.className = "chambres";
+      chambres.forEach(num => {
+        const chambreDiv = document.createElement("div");
+        chambreDiv.className = "chambre";
+        chambreDiv.dataset.id = num;
+        const titre = document.createElement("div");
+        titre.textContent = `${num}`;
+        chambreDiv.appendChild(titre);
+        const etatBtn = document.createElement("button");
+        chambreDiv.appendChild(etatBtn);
+        const select = document.createElement("select");
+        collaborateurs.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+        chambreDiv.appendChild(select);
+        const info = document.createElement("div");
+        info.className = "etat-collabo";
+        chambreDiv.appendChild(info);
+
+        let currentIndex = 0;
+        const chambreRef = ref(db, `chambres/${num}`);
+        onValue(chambreRef, snapshot => {
+          const val = snapshot.val();
+          if (val && etats.includes(val.etat)) {
+            currentIndex = etats.indexOf(val.etat);
+            etatBtn.textContent = etatLabels[val.etat];
+            etatBtn.className = val.etat;
+            chambreDiv.className = `chambre ${val.etat}`;
+            info.textContent = etatLabels[val.etat];
+            select.value = val.collaborateur || "---";
+          }
+        });
+
+        etatBtn.onclick = () => {
+          currentIndex = (currentIndex + 1) % etats.length;
+          const nextEtat = etats[currentIndex];
+          update(chambreRef, { etat: nextEtat, collaborateur: select.value });
+          etatBtn.textContent = etatLabels[nextEtat];
+          etatBtn.className = nextEtat;
+          chambreDiv.className = `chambre ${nextEtat} active`;
+          info.textContent = etatLabels[nextEtat];
+          setTimeout(() => chambreDiv.classList.remove("active"), 1500);
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etats[currentIndex], collaborateur: select.value });
+        };
+
+        wrap.appendChild(chambreDiv);
       });
+      section.appendChild(wrap);
+      document.getElementById("app").appendChild(section);
     });
   </script>
 </body>
