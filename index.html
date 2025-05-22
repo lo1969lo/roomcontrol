@@ -51,7 +51,7 @@
     .recouche { background: navy; color: #87cefa; }
     .recouche_non_faire { background: #87cefa; color: black; }
     .parfum { background: pink; color: red; }
-    .prete { background: yellow; color: black; }
+    .prete { background: yellow; color: black !important; }
     .bloquee { background: orange; color: black; }
     .maintenance { background: white; color: #ccc; border: 2px solid #ccc; }
     .urgence_parfum { background: red; color: white; }
@@ -76,8 +76,9 @@
       min-width: 75px;
       cursor: pointer;
     }
-    .etat-item[data-index="10"] { color: black !important; }
-    .etat-item[data-index="1"] { color: black !important; }
+    .etat-item[data-index="10"], .etat-item[data-index="1"], .etat-item.prete {
+      color: black !important;
+    }
     .etat-item::after {
       content: attr(data-index);
       display: block;
@@ -140,15 +141,6 @@
       span.className = `etat-item ${etat}`;
       span.setAttribute("data-index", index + 1);
       span.textContent = label;
-      span.onclick = () => {
-        const active = document.querySelector(".chambre.active");
-        if (active) {
-          const chambreId = active.dataset.id;
-          const select = active.querySelector("select");
-          update(ref(db, `chambres/${chambreId}`), { etat, collaborateur: select.value });
-          active.classList.remove("active");
-        }
-      };
       legendDiv.appendChild(span);
     });
     document.getElementById("app").appendChild(legendDiv);
@@ -168,8 +160,8 @@
         const titre = document.createElement("div");
         titre.textContent = `${num}`;
         chambreDiv.appendChild(titre);
-        const etat = document.createElement("button");
-        chambreDiv.appendChild(etat);
+        const etatBtn = document.createElement("button");
+        chambreDiv.appendChild(etatBtn);
         const select = document.createElement("select");
         collaborateurs.forEach(name => {
           const opt = document.createElement("option");
@@ -182,12 +174,14 @@
         info.className = "etat-collabo";
         chambreDiv.appendChild(info);
 
+        let currentIndex = 0;
         const chambreRef = ref(db, `chambres/${num}`);
         onValue(chambreRef, snapshot => {
           const val = snapshot.val();
           if (val) {
-            etat.textContent = val.etat;
-            etat.className = val.etat;
+            currentIndex = etats.indexOf(val.etat);
+            etatBtn.textContent = val.etat;
+            etatBtn.className = val.etat;
             select.value = val.collaborateur || "---";
             chambreDiv.className = `chambre ${val.etat}`;
             info.textContent = val.etat.toUpperCase();
@@ -197,13 +191,14 @@
           }
         });
 
-        etat.onclick = () => {
-          document.querySelectorAll(".chambre").forEach(el => el.classList.remove("active"));
-          chambreDiv.classList.add("active");
+        etatBtn.onclick = () => {
+          currentIndex = (currentIndex + 1) % etats.length;
+          const nextEtat = etats[currentIndex];
+          update(chambreRef, { etat: nextEtat, collaborateur: select.value });
         };
 
         select.onchange = () => {
-          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+          update(chambreRef, { etat: etatBtn.textContent, collaborateur: select.value });
         };
 
         wrap.appendChild(chambreDiv);
