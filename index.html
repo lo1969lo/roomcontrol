@@ -9,11 +9,11 @@
     body { font-family: Arial; background: #f5f5f5; padding: 2rem; }
     .etage { margin-bottom: 2rem; page-break-after: always; }
     .chambres { display: flex; flex-wrap: wrap; gap: 10px; }
-    .chambre { background: white; padding: 1rem; border-radius: 8px; min-width: 100px; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.1); transition: box-shadow 0.3s ease; }
-    .highlight { box-shadow: 0 0 15px 3px #00ff00 !important; }
+    .chambre { background: white; padding: 1rem; border-radius: 8px; min-width: 100px; text-align: center; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     .etat-collabo { margin-top: 0.5rem; font-size: 0.85rem; font-weight: bold; color: #222; text-transform: uppercase; height: 1.5rem; display: flex; align-items: center; justify-content: center; }
     button, select { margin-top: 0.3rem; padding: 0.3rem; width: 100%; font-size: 0.85rem; height: 2rem; }
     .blanc { background: white; color: black; border: 1px solid #ccc; }
+    .non_vendue { background: grey; color: white; }
     .depart { background: red; color: black; }
     .recouche { background: navy; color: #87cefa; }
     .recouche_non_faire { background: #87cefa; color: black; }
@@ -26,164 +26,150 @@
     .quick { background: black; color: white; }
     .inoccupée { background: lightgray; color: black; }
     .npd { background: purple; color: white; }
-    .legend {
-      margin: 1rem 0;
-      display: flex;
-      flex-direction: row;
-      flex-wrap: nowrap;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-start;
-      overflow-x: auto;
-    }
-    .etat-item {
-      padding: 5px 10px;
-      border-radius: 5px;
-      font-size: 0.75rem;
-      color: white;
-      position: relative;
-      text-align: center;
-      min-width: 75px;
-      white-space: nowrap;
-    }
-    .etat-item::after {
-      content: attr(data-index);
-      display: block;
-      font-size: 0.75rem;
-      color: black;
-      margin-top: 2px;
-    }
+    .legend { margin: 1rem 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+    .etat-item { padding: 5px 10px; border-radius: 5px; font-size: 0.75rem; color: white; position: relative; text-align: center; min-width: 75px; }
+    .etat-item::after { content: attr(data-index); display: block; font-size: 0.75rem; color: black; margin-top: 2px; }
     #resume { margin-top: 2rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     #resume h2 { margin-bottom: 1rem; }
-    #muteToggle { float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
   </style>
 </head>
 <body>
-<audio id="notifSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg" preload="auto"></audio>
-<h1 id="titre">RoomControl (temps réel)</h1>
-<div id="controls">
-  <button id="pdfBtn">Télécharger PDF</button>
-  <button id="muteToggle" title="Activer/Désactiver le son">🔇</button>
-</div>
-<div id="app"></div>
-<div id="resume"></div>
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
-  import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
+  <h1 id="titre"></h1>
+  <div id="controls"></div>
+  <div id="app"></div>
+  <div id="resume"></div>
 
-  const firebaseConfig = { apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY", authDomain: "roomcontrol-2a204.firebaseapp.com", databaseURL: "https://roomcontrol-2a204-default-rtdb.europe-west1.firebasedatabase.app", projectId: "roomcontrol-2a204", storageBucket: "roomcontrol-2a204.appspot.com", messagingSenderId: "558206279775", appId: "1:558206279775:web:d2cea568f73258dc31fbea" };
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
+    import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  let soundEnabled = false;
-  const notifSound = document.getElementById("notifSound");
-  document.getElementById("muteToggle").onclick = () => {
-    soundEnabled = !soundEnabled;
-    document.getElementById("muteToggle").textContent = soundEnabled ? "🔊" : "🔇";
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyC59WLjonNhBwvLfjLJBbEZmuvA6m-v5vY",
+      authDomain: "roomcontrol-2a204.firebaseapp.com",
+      databaseURL: "https://roomcontrol-2a204-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "roomcontrol-2a204",
+      storageBucket: "roomcontrol-2a204.appspot.com",
+      messagingSenderId: "558206279775",
+      appId: "1:558206279775:web:d2cea568f73258dc31fbea"
+    };
 
-  const etats = ['blanc','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
-  const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
-  const etatLabels = {
-    blanc: "BLANC", depart: "DEPART", recouche: "RECOUCHE", recouche_non_faire: "RECOUCHE NON FAIRE",
-    parfum: "PARFUM", inoccupée: "INOCCUPÉE", npd: "NPD", prete: "PRÊTE", bloquee: "BLOQUÉE",
-    maintenance: "MAINTENANCE", urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
-  };
-  const data = {"Rez-de-chaussée": [16,17,18,20,21,22,23,24,25,26,27,28,29],"1er étage": [101,103,104,105,106,107,108,110,111,112,113,114,115,116,117,118,120,121,122,123,124,125,126,127,128,129],"2e étage": [201,203,204,205,206,207,208,210,211,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229],"3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329] };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  const container = document.getElementById("app");
-  const legendDiv = document.createElement("div");
-  legendDiv.className = "legend";
-  Object.entries(etatLabels).forEach(([etat, label], index) => {
-    const span = document.createElement("span");
-    span.className = `etat-item ${etat}`;
-    span.setAttribute("data-index", index + 1);
-    span.textContent = label;
-    legendDiv.appendChild(span);
-  });
-  container.appendChild(legendDiv);
+    const etats = ['blanc','non_vendue','depart','recouche','recouche_non_faire','parfum','inoccupée','npd','prete','bloquee','maintenance','urgence_parfum','bloquee_videe','quick'];
+    const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
+    const etatLabels = {
+      blanc: "BLANC", non_vendue: "NON VENDUE", depart: "DEPART", recouche: "RECOUCHE",
+      recouche_non_faire: "RECOUCHE NON FAIRE", parfum: "PARFUM", inoccupée: "INOCCUPÉE",
+      npd: "NPD", prete: "PRÊTE", bloquee: "BLOQUÉE", maintenance: "MAINTENANCE",
+      urgence_parfum: "URGENCE PARFUM", bloquee_videe: "BLOQUÉE VIDÉE", quick: "QUICK"
+    };
+    const data = {
+      "Rez-de-chaussée": [16,17,18,20,21,22,23,24,25,26,27,28,29],
+      "1er étage": [101,103,104,105,106,107,108,110,111,112,113,114,115,116,117,118,120,121,122,123,124,125,126,127,128,129],
+      "2e étage": [201,203,204,205,206,207,208,210,211,212,213,214,215,216,217,218,220,221,222,223,224,225,226,227,228,229],
+      "3e étage": [301,303,304,305,306,307,308,310,311,312,313,314,315,316,317,318,320,321,322,323,324,325,326,327,328,329]
+    };
 
-  const chambreElements = [];
-  Object.entries(data).forEach(([etage, chambres]) => {
-    const section = document.createElement("div");
-    section.className = "etage";
-    const title = document.createElement("h2");
-    title.textContent = etage;
-    section.appendChild(title);
-    const wrap = document.createElement("div");
-    wrap.className = "chambres";
+    const mode = window.location.href.includes("agent") ? "agent" : "admin";
+    document.getElementById("titre").textContent = mode === "agent" ? "RoomControl (temps réel AGENT)" : "RoomControl (temps réel ADMIN)";
 
-    chambres.forEach(num => {
-      const chambreDiv = document.createElement("div");
-      chambreDiv.className = "chambre";
-      const titre = document.createElement("div");
-      titre.textContent = num;
-      chambreDiv.appendChild(titre);
-      const etat = document.createElement("button");
-      chambreDiv.appendChild(etat);
-      const select = document.createElement("select");
-      collaborateurs.forEach(name => {
-        const opt = document.createElement("option");
-        opt.value = name;
-        opt.textContent = name;
-        select.appendChild(opt);
+    const controls = document.getElementById("controls");
+    if (mode === "admin") {
+      controls.innerHTML = `<button id="resetBtn">Tout réinitialiser</button><button id="pdfBtn">Télécharger PDF</button>`;
+    }
+
+    const legendDiv = document.createElement("div");
+    legendDiv.className = "legend";
+    Object.entries(etatLabels).forEach(([etat, label], index) => {
+      const span = document.createElement("span");
+      span.className = `etat-item ${etat}`;
+      span.setAttribute("data-index", index);
+      span.textContent = label;
+      legendDiv.appendChild(span);
+    });
+    document.getElementById("app").appendChild(legendDiv);
+
+    const chambreElements = [];
+    Object.entries(data).forEach(([etage, chambres]) => {
+      const section = document.createElement("div");
+      section.className = "etage print-page";
+      const title = document.createElement("h2");
+      title.textContent = etage;
+      section.appendChild(title);
+      const wrap = document.createElement("div");
+      wrap.className = "chambres";
+      chambres.forEach(num => {
+        const chambreDiv = document.createElement("div");
+        chambreDiv.className = "chambre";
+        const titre = document.createElement("div");
+        titre.textContent = `${num}`;
+        chambreDiv.appendChild(titre);
+        const etat = document.createElement("button");
+        chambreDiv.appendChild(etat);
+        const select = document.createElement("select");
+        collaborateurs.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          opt.textContent = name;
+          select.appendChild(opt);
+        });
+        chambreDiv.appendChild(select);
+        const info = document.createElement("div");
+        info.className = "etat-collabo";
+        chambreDiv.appendChild(info);
+        const chambreRef = ref(db, `chambres/${num}`);
+        onValue(chambreRef, snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            etat.textContent = val.etat;
+            etat.className = val.etat;
+            select.value = val.collaborateur || "---";
+            chambreDiv.className = `chambre ${val.etat}`;
+            info.textContent = val.etat.toUpperCase();
+            chambreDiv.dataset.collaborateur = val.collaborateur;
+          } else {
+            update(chambreRef, { etat: 'non_vendue', collaborateur: '---' });
+          }
+        });
+
+        etat.onclick = () => {
+          const current = etats.indexOf(etat.textContent);
+          const next = etats[(current + 1) % etats.length];
+          update(chambreRef, { etat: next, collaborateur: select.value });
+        };
+
+        select.onchange = () => {
+          update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
+        };
+
+        wrap.appendChild(chambreDiv);
+        chambreElements.push(chambreDiv);
       });
-      chambreDiv.appendChild(select);
-      const info = document.createElement("div");
-      info.className = "etat-collabo";
-      chambreDiv.appendChild(info);
-
-      const chambreRef = ref(db, `chambres/${num}`);
-      onValue(chambreRef, snapshot => {
-        const val = snapshot.val();
-        if (val) {
-          etat.textContent = val.etat;
-          etat.className = val.etat;
-          select.value = val.collaborateur || "---";
-          chambreDiv.className = `chambre ${val.etat}`;
-          info.textContent = val.etat.toUpperCase();
-          chambreDiv.dataset.collaborateur = val.collaborateur;
-          chambreDiv.classList.add("highlight");
-          if (soundEnabled) notifSound.play();
-          setTimeout(() => chambreDiv.classList.remove("highlight"), 1000);
-        } else {
-          update(chambreRef, { etat: 'blanc', collaborateur: '---' });
-        }
-      });
-
-      etat.onclick = () => {
-        const current = etats.indexOf(etat.textContent);
-        const next = etats[(current + 1) % etats.length];
-        update(chambreRef, { etat: next, collaborateur: select.value });
-        etat.textContent = next;
-        etat.className = next;
-        chambreDiv.className = `chambre ${next}`;
-        info.textContent = next.toUpperCase();
-      };
-
-      select.onchange = () => {
-        update(chambreRef, { etat: etat.textContent, collaborateur: select.value });
-        chambreDiv.dataset.collaborateur = select.value;
-      };
-
-      wrap.appendChild(chambreDiv);
-      chambreElements.push(chambreDiv);
+      section.appendChild(wrap);
+      document.getElementById("app").appendChild(section);
     });
 
-    section.appendChild(wrap);
-    container.appendChild(section);
-  });
+    if (mode === "admin") {
+      document.getElementById("resetBtn").onclick = () => {
+        if (confirm("Tout remettre à zéro ?")) {
+          Object.values(data).flat().forEach(num => {
+            set(ref(db, `chambres/${num}`), { etat: 'non_vendue', collaborateur: '---' });
+          });
+        }
+      };
 
-  document.getElementById("pdfBtn").onclick = () => {
-    const opt = {
-      margin: 0.2,
-      filename: `feuille-chambres-${new Date().toISOString().slice(0,10)}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 1.5 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-    };
-    html2pdf().set(opt).from(document.body).save();
-  };
-</script>
+      document.getElementById("pdfBtn").onclick = () => {
+        const opt = {
+          margin: 0.2,
+          filename: `feuille-chambres-${new Date().toISOString().slice(0,10)}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 1.5 },
+          jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(document.body).save();
+      };
+    }
+  </script>
 </body>
 </html>
