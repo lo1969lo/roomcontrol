@@ -160,7 +160,7 @@
     </table>
   </div>
 
-  <script type="module">
+  <script type="module" id="moduleScript">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
   import { getDatabase, ref, set, update, onValue } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js';
 
@@ -332,6 +332,36 @@
 <script>
   window.addEventListener("load", () => {
     if (typeof initUI === "function") initUI();
+  });
+</script>
+<script>
+  window.addEventListener("load", () => {
+    document.getElementById("currentDate").textContent = new Date().toLocaleDateString('fr-FR');
+    const filtreSelect = document.getElementById("filtre");
+    const collaborateurs = ["---", "Rahel", "Landrine", "Benti", "Gladys", "Agnès", "Eva", "Aurélien", "Sylvie", "Déborah", "Laurent"];
+    collaborateurs.forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      filtreSelect.appendChild(opt);
+    });
+    filtreSelect.onchange = () => {
+      const selected = filtreSelect.value;
+      document.querySelectorAll('.chambre').forEach(chambre => {
+        const selectedCollab = chambre.querySelector('select')?.value;
+        chambre.style.display = selected === 'all' || selectedCollab === selected ? '' : 'none';
+      });
+    };
+    document.getElementById("exportPDF").onclick = () => {
+      const opt = {
+        margin: 0.2,
+        filename: `etat-general-${new Date().toISOString().slice(0, 10)}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+      };
+      html2pdf().set(opt).from(document.getElementById("etat-general")).save();
+    };
   });
 </script>
 </body>
