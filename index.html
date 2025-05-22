@@ -121,7 +121,7 @@
     }
   </style>
 </head>
-<body onload="initUI()">
+<body>
   <h1 id="titre">RoomControl (temps réel)</h1>
 
   <div id="etat-general">
@@ -329,5 +329,10 @@
       html2pdf().set(opt).from(document.getElementById("etat-general")).save();
     };
   };
+<script>
+  window.addEventListener("load", () => {
+    if (typeof initUI === "function") initUI();
+  });
+</script>
 </body>
 </html>
