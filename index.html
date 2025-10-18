@@ -597,51 +597,38 @@
     appDiv.appendChild(section);
   });
   // Enhanced save functions that also save to Firebase if available
-  const originalSaveInventoryLingerie = window.saveInventoryLingerie;
-  const saveInventoryLingerieToFirebase = function() {
-    const inventoryData = {};
-    const inputs = document.querySelectorAll('#inventory-lingerie input');
-    inputs.forEach(input => {
-      inventoryData[input.id] = input.value;
-    });
-    
-    // Try to save to Firebase
-    try {
-      const inventoryRef = ref(db, 'inventory/lingerie');
-      set(inventoryRef, {
-        ...inventoryData,
-        lastUpdated: new Date().toISOString()
-      });
-    } catch (e) {
-      console.log('Firebase not available, using localStorage only');
-    }
-    
-    // Also call the localStorage save
-    originalSaveInventoryLingerie();
+  // These wrap the localStorage save functions with Firebase integration
+  const enhanceSaveWithFirebase = (localSaveFn, dbPath) => {
+    return function() {
+      // First save to localStorage (always works)
+      localSaveFn();
+      
+      // Try to save to Firebase if available
+      try {
+        const inventoryData = {};
+        const tableId = dbPath === 'inventory/lingerie' ? '#inventory-lingerie' : '#inventory-cleaning';
+        const inputs = document.querySelectorAll(`${tableId} input`);
+        inputs.forEach(input => {
+          inventoryData[input.id] = input.value;
+        });
+        
+        const inventoryRef = ref(db, dbPath);
+        set(inventoryRef, {
+          ...inventoryData,
+          lastUpdated: new Date().toISOString()
+        });
+      } catch (e) {
+        console.log(`Firebase not available for ${dbPath}, using localStorage only`);
+      }
+    };
   };
 
+  // Enhance the global save functions with Firebase support
+  const originalSaveInventoryLingerie = window.saveInventoryLingerie;
   const originalSaveInventoryCleaning = window.saveInventoryCleaning;
-  const saveInventoryCleaningToFirebase = function() {
-    const inventoryData = {};
-    const inputs = document.querySelectorAll('#inventory-cleaning input');
-    inputs.forEach(input => {
-      inventoryData[input.id] = input.value;
-    });
-    
-    // Try to save to Firebase
-    try {
-      const inventoryRef = ref(db, 'inventory/cleaning');
-      set(inventoryRef, {
-        ...inventoryData,
-        lastUpdated: new Date().toISOString()
-      });
-    } catch (e) {
-      console.log('Firebase not available, using localStorage only');
-    }
-    
-    // Also call the localStorage save
-    originalSaveInventoryCleaning();
-  };
+  
+  window.saveInventoryLingerie = enhanceSaveWithFirebase(originalSaveInventoryLingerie, 'inventory/lingerie');
+  window.saveInventoryCleaning = enhanceSaveWithFirebase(originalSaveInventoryCleaning, 'inventory/cleaning');
 
   // Load inventory data from Firebase
   window.loadInventoryData = function() {
@@ -652,6 +639,8 @@
         const data = snapshot.val();
         if (data) {
           Object.entries(data).forEach(([key, value]) => {
+            // Skip metadata fields
+            if (key === 'lastUpdated') return;
             const input = document.getElementById(key);
             if (input) input.value = value;
           });
@@ -664,6 +653,8 @@
         const data = snapshot.val();
         if (data) {
           Object.entries(data).forEach(([key, value]) => {
+            // Skip metadata fields
+            if (key === 'lastUpdated') return;
             const input = document.getElementById(key);
             if (input) input.value = value;
           });
