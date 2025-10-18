@@ -119,6 +119,80 @@
     #etat-general th {
       background: #f0f0f0;
     }
+    /* Inventory Section Styles */
+    .inventory-section {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      page-break-after: always;
+    }
+    .inventory-section h2 {
+      margin-bottom: 1rem;
+      color: #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .inventory-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .inventory-table th,
+    .inventory-table td {
+      border: 2px solid #666;
+      padding: 12px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .inventory-table th {
+      background: #e8e8e8;
+      font-weight: bold;
+      color: #333;
+    }
+    .inventory-table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+    .inventory-table tr:hover {
+      background: #f0f0f0;
+    }
+    .inventory-table input[type="number"] {
+      width: 80px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .save-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .save-btn:hover {
+      background: #218838;
+    }
+    .save-btn:active {
+      background: #1e7e34;
+    }
+    .saved-indicator {
+      color: #28a745;
+      font-size: 0.85rem;
+      margin-left: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .saved-indicator.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body onload="initUI()">
@@ -159,6 +233,216 @@
       <tbody></tbody>
     </table>
   </div>
+
+  <!-- Inventory Section for Lingerie -->
+  <div class="inventory-section">
+    <h2>
+      Inventaire Lingerie (Linge)
+      <button class="save-btn" onclick="saveInventoryLingerie()">Enregistrer</button>
+      <span class="saved-indicator" id="saved-lingerie">✓ Enregistré</span>
+    </h2>
+    <table class="inventory-table">
+      <thead>
+        <tr>
+          <th>Article</th>
+          <th>Quantité en Stock</th>
+          <th>Quantité Minimale</th>
+          <th>Quantité Commandée</th>
+          <th>Article</th>
+        </tr>
+      </thead>
+      <tbody id="inventory-lingerie">
+        <tr>
+          <td>Draps Simples</td>
+          <td><input type="number" id="draps-simples-stock" value="150" min="0"></td>
+          <td><input type="number" id="draps-simples-min" value="50" min="0"></td>
+          <td><input type="number" id="draps-simples-cmd" value="0" min="0"></td>
+          <td>Draps Simples</td>
+        </tr>
+        <tr>
+          <td>Draps Doubles</td>
+          <td><input type="number" id="draps-doubles-stock" value="120" min="0"></td>
+          <td><input type="number" id="draps-doubles-min" value="40" min="0"></td>
+          <td><input type="number" id="draps-doubles-cmd" value="0" min="0"></td>
+          <td>Draps Doubles</td>
+        </tr>
+        <tr>
+          <td>Taies d'Oreiller</td>
+          <td><input type="number" id="taies-stock" value="200" min="0"></td>
+          <td><input type="number" id="taies-min" value="60" min="0"></td>
+          <td><input type="number" id="taies-cmd" value="0" min="0"></td>
+          <td>Taies d'Oreiller</td>
+        </tr>
+        <tr>
+          <td>Couvertures</td>
+          <td><input type="number" id="couvertures-stock" value="80" min="0"></td>
+          <td><input type="number" id="couvertures-min" value="30" min="0"></td>
+          <td><input type="number" id="couvertures-cmd" value="0" min="0"></td>
+          <td>Couvertures</td>
+        </tr>
+        <tr>
+          <td>Serviettes de Bain</td>
+          <td><input type="number" id="serviettes-bain-stock" value="180" min="0"></td>
+          <td><input type="number" id="serviettes-bain-min" value="50" min="0"></td>
+          <td><input type="number" id="serviettes-bain-cmd" value="0" min="0"></td>
+          <td>Serviettes de Bain</td>
+        </tr>
+        <tr>
+          <td>Serviettes de Toilette</td>
+          <td><input type="number" id="serviettes-toilette-stock" value="220" min="0"></td>
+          <td><input type="number" id="serviettes-toilette-min" value="70" min="0"></td>
+          <td><input type="number" id="serviettes-toilette-cmd" value="0" min="0"></td>
+          <td>Serviettes de Toilette</td>
+        </tr>
+        <tr>
+          <td>Tapis de Bain</td>
+          <td><input type="number" id="tapis-bain-stock" value="100" min="0"></td>
+          <td><input type="number" id="tapis-bain-min" value="35" min="0"></td>
+          <td><input type="number" id="tapis-bain-cmd" value="0" min="0"></td>
+          <td>Tapis de Bain</td>
+        </tr>
+        <tr>
+          <td>Housses de Couette</td>
+          <td><input type="number" id="housses-stock" value="90" min="0"></td>
+          <td><input type="number" id="housses-min" value="30" min="0"></td>
+          <td><input type="number" id="housses-cmd" value="0" min="0"></td>
+          <td>Housses de Couette</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Inventory Section for Cleaning Supplies -->
+  <div class="inventory-section">
+    <h2>
+      Inventaire Produits d'Entretien
+      <button class="save-btn" onclick="saveInventoryCleaning()">Enregistrer</button>
+      <span class="saved-indicator" id="saved-cleaning">✓ Enregistré</span>
+    </h2>
+    <table class="inventory-table">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Quantité en Stock</th>
+          <th>Quantité Minimale</th>
+          <th>Quantité Commandée</th>
+          <th>Produit</th>
+        </tr>
+      </thead>
+      <tbody id="inventory-cleaning">
+        <tr>
+          <td>Détergent Multi-surfaces</td>
+          <td><input type="number" id="detergent-stock" value="25" min="0"></td>
+          <td><input type="number" id="detergent-min" value="10" min="0"></td>
+          <td><input type="number" id="detergent-cmd" value="0" min="0"></td>
+          <td>Détergent Multi-surfaces</td>
+        </tr>
+        <tr>
+          <td>Désinfectant</td>
+          <td><input type="number" id="desinfectant-stock" value="30" min="0"></td>
+          <td><input type="number" id="desinfectant-min" value="12" min="0"></td>
+          <td><input type="number" id="desinfectant-cmd" value="0" min="0"></td>
+          <td>Désinfectant</td>
+        </tr>
+        <tr>
+          <td>Produit Vitres</td>
+          <td><input type="number" id="vitres-stock" value="15" min="0"></td>
+          <td><input type="number" id="vitres-min" value="8" min="0"></td>
+          <td><input type="number" id="vitres-cmd" value="0" min="0"></td>
+          <td>Produit Vitres</td>
+        </tr>
+        <tr>
+          <td>Sacs Poubelle</td>
+          <td><input type="number" id="sacs-stock" value="200" min="0"></td>
+          <td><input type="number" id="sacs-min" value="50" min="0"></td>
+          <td><input type="number" id="sacs-cmd" value="0" min="0"></td>
+          <td>Sacs Poubelle</td>
+        </tr>
+        <tr>
+          <td>Éponges</td>
+          <td><input type="number" id="eponges-stock" value="50" min="0"></td>
+          <td><input type="number" id="eponges-min" value="20" min="0"></td>
+          <td><input type="number" id="eponges-cmd" value="0" min="0"></td>
+          <td>Éponges</td>
+        </tr>
+        <tr>
+          <td>Gants de Ménage</td>
+          <td><input type="number" id="gants-stock" value="40" min="0"></td>
+          <td><input type="number" id="gants-min" value="15" min="0"></td>
+          <td><input type="number" id="gants-cmd" value="0" min="0"></td>
+          <td>Gants de Ménage</td>
+        </tr>
+        <tr>
+          <td>Papier Toilette</td>
+          <td><input type="number" id="papier-stock" value="300" min="0"></td>
+          <td><input type="number" id="papier-min" value="100" min="0"></td>
+          <td><input type="number" id="papier-cmd" value="0" min="0"></td>
+          <td>Papier Toilette</td>
+        </tr>
+        <tr>
+          <td>Savon Liquide</td>
+          <td><input type="number" id="savon-stock" value="45" min="0"></td>
+          <td><input type="number" id="savon-min" value="15" min="0"></td>
+          <td><input type="number" id="savon-cmd" value="0" min="0"></td>
+          <td>Savon Liquide</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+  // Global save functions for inventory sections
+  window.saveInventoryLingerie = function() {
+    const indicator = document.getElementById('saved-lingerie');
+    indicator.classList.add('show');
+    setTimeout(() => indicator.classList.remove('show'), 2000);
+    
+    // Save to localStorage for demo
+    const inventoryData = {};
+    const inputs = document.querySelectorAll('#inventory-lingerie input');
+    inputs.forEach(input => {
+      inventoryData[input.id] = input.value;
+    });
+    localStorage.setItem('inventory-lingerie', JSON.stringify(inventoryData));
+    console.log('Lingerie inventory saved:', inventoryData);
+  };
+
+  window.saveInventoryCleaning = function() {
+    const indicator = document.getElementById('saved-cleaning');
+    indicator.classList.add('show');
+    setTimeout(() => indicator.classList.remove('show'), 2000);
+    
+    // Save to localStorage for demo
+    const inventoryData = {};
+    const inputs = document.querySelectorAll('#inventory-cleaning input');
+    inputs.forEach(input => {
+      inventoryData[input.id] = input.value;
+    });
+    localStorage.setItem('inventory-cleaning', JSON.stringify(inventoryData));
+    console.log('Cleaning inventory saved:', inventoryData);
+  };
+
+  // Load inventory data from localStorage
+  window.loadInventoryFromStorage = function() {
+    const lingerieData = localStorage.getItem('inventory-lingerie');
+    if (lingerieData) {
+      const data = JSON.parse(lingerieData);
+      Object.entries(data).forEach(([key, value]) => {
+        const input = document.getElementById(key);
+        if (input) input.value = value;
+      });
+    }
+    
+    const cleaningData = localStorage.getItem('inventory-cleaning');
+    if (cleaningData) {
+      const data = JSON.parse(cleaningData);
+      Object.entries(data).forEach(([key, value]) => {
+        const input = document.getElementById(key);
+        if (input) input.value = value;
+      });
+    }
+  };
+  </script>
 
   <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
@@ -312,8 +596,79 @@
     section.appendChild(wrap);
     appDiv.appendChild(section);
   });
+  // Enhanced save functions that also save to Firebase if available
+  // These wrap the localStorage save functions with Firebase integration
+  const enhanceSaveWithFirebase = (localSaveFn, dbPath) => {
+    return function() {
+      // First save to localStorage (always works)
+      localSaveFn();
+      
+      // Try to save to Firebase if available
+      try {
+        const inventoryData = {};
+        const tableId = dbPath === 'inventory/lingerie' ? '#inventory-lingerie' : '#inventory-cleaning';
+        const inputs = document.querySelectorAll(`${tableId} input`);
+        inputs.forEach(input => {
+          inventoryData[input.id] = input.value;
+        });
+        
+        const inventoryRef = ref(db, dbPath);
+        set(inventoryRef, {
+          ...inventoryData,
+          lastUpdated: new Date().toISOString()
+        });
+      } catch (e) {
+        console.log(`Firebase not available for ${dbPath}, using localStorage only`);
+      }
+    };
+  };
+
+  // Enhance the global save functions with Firebase support
+  const originalSaveInventoryLingerie = window.saveInventoryLingerie;
+  const originalSaveInventoryCleaning = window.saveInventoryCleaning;
+  
+  window.saveInventoryLingerie = enhanceSaveWithFirebase(originalSaveInventoryLingerie, 'inventory/lingerie');
+  window.saveInventoryCleaning = enhanceSaveWithFirebase(originalSaveInventoryCleaning, 'inventory/cleaning');
+
+  // Load inventory data from Firebase
+  window.loadInventoryData = function() {
+    try {
+      // Load lingerie inventory
+      const lingerieRef = ref(db, 'inventory/lingerie');
+      onValue(lingerieRef, snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          Object.entries(data).forEach(([key, value]) => {
+            // Skip metadata fields
+            if (key === 'lastUpdated') return;
+            const input = document.getElementById(key);
+            if (input) input.value = value;
+          });
+        }
+      });
+
+      // Load cleaning inventory
+      const cleaningRef = ref(db, 'inventory/cleaning');
+      onValue(cleaningRef, snapshot => {
+        const data = snapshot.val();
+        if (data) {
+          Object.entries(data).forEach(([key, value]) => {
+            // Skip metadata fields
+            if (key === 'lastUpdated') return;
+            const input = document.getElementById(key);
+            if (input) input.value = value;
+          });
+        }
+      });
+    } catch (e) {
+      console.log('Firebase not available, using localStorage only');
+      window.loadInventoryFromStorage();
+    }
+  };
+
   window.initUI = function () {
     document.getElementById("currentDate").textContent = new Date().toLocaleDateString('fr-FR');
+    loadInventoryData();
 
     // Ajouter les collaborateurs au filtre
     const filtreSelect = document.getElementById("filtre");
