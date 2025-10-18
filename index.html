@@ -119,6 +119,119 @@
     #etat-general th {
       background: #f0f0f0;
     }
+    /* Inventory LINGERIE styles */
+    .inventory-section {
+      margin: 2rem 0;
+      padding: 2rem;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      page-break-inside: avoid;
+    }
+    .inventory-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 3px solid #007bff;
+    }
+    .inventory-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #007bff;
+      text-transform: uppercase;
+    }
+    .inventory-subsection {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+    .subsection-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #6c757d;
+    }
+    .subsection-title {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+    }
+    .inventory-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      background: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .inventory-table th {
+      background: #007bff;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: bold;
+      border: 1px solid #0056b3;
+    }
+    .inventory-table td {
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      vertical-align: middle;
+    }
+    .inventory-table tbody tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+    .inventory-table tbody tr:hover {
+      background: #e9ecef;
+    }
+    .inventory-table input[type="number"] {
+      width: 80px;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    .inventory-table input[type="number"]:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+    }
+    .btn-save {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    .btn-save:hover {
+      background: #218838;
+    }
+    .btn-save:active {
+      transform: translateY(1px);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .save-message {
+      color: #28a745;
+      font-weight: bold;
+      margin-left: 1rem;
+      display: none;
+    }
+    .subsection-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body onload="initUI()">
@@ -312,8 +425,322 @@
     section.appendChild(wrap);
     appDiv.appendChild(section);
   });
+
+  // Add Inventory LINGERIE section
+  const inventorySection = document.createElement("div");
+  inventorySection.className = "inventory-section";
+  inventorySection.innerHTML = `
+    <div class="inventory-header">
+      <div class="inventory-title">INVENTAIRE LINGERIE</div>
+      <div class="inventory-title">INVENTAIRE LINGERIE</div>
+    </div>
+
+    <!-- LINGES Section -->
+    <div id="linges-section" class="inventory-subsection">
+      <div class="subsection-header">
+        <div class="subsection-title">LINGES</div>
+        <div class="subsection-title">LINGES</div>
+      </div>
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Article</th>
+            <th>Quantité en Stock</th>
+            <th>Quantité Minimum</th>
+            <th>Observations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Draps housse 1 personne</strong></td>
+            <td><input type="number" data-item="draps_housse_1p_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_housse_1p_min" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_housse_1p_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Draps housse 2 personnes</strong></td>
+            <td><input type="number" data-item="draps_housse_2p_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_housse_2p_min" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_housse_2p_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Draps plat 1 personne</strong></td>
+            <td><input type="number" data-item="draps_plat_1p_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_plat_1p_min" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_plat_1p_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Draps plat 2 personnes</strong></td>
+            <td><input type="number" data-item="draps_plat_2p_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_plat_2p_min" min="0" value="0"></td>
+            <td><input type="number" data-item="draps_plat_2p_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Taies d'oreiller</strong></td>
+            <td><input type="number" data-item="taies_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="taies_min" min="0" value="0"></td>
+            <td><input type="number" data-item="taies_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Housses de couette 1 personne</strong></td>
+            <td><input type="number" data-item="housses_couette_1p_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="housses_couette_1p_min" min="0" value="0"></td>
+            <td><input type="number" data-item="housses_couette_1p_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Housses de couette 2 personnes</strong></td>
+            <td><input type="number" data-item="housses_couette_2p_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="housses_couette_2p_min" min="0" value="0"></td>
+            <td><input type="number" data-item="housses_couette_2p_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Serviettes de bain</strong></td>
+            <td><input type="number" data-item="serviettes_bain_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="serviettes_bain_min" min="0" value="0"></td>
+            <td><input type="number" data-item="serviettes_bain_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Serviettes de toilette</strong></td>
+            <td><input type="number" data-item="serviettes_toilette_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="serviettes_toilette_min" min="0" value="0"></td>
+            <td><input type="number" data-item="serviettes_toilette_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Tapis de bain</strong></td>
+            <td><input type="number" data-item="tapis_bain_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="tapis_bain_min" min="0" value="0"></td>
+            <td><input type="number" data-item="tapis_bain_obs" min="0" value="0"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="subsection-footer">
+        <button class="btn-save" onclick="saveInventory('linges')">Enregistrer</button>
+        <span class="save-message" id="save-msg-linges">✓ Enregistré avec succès</span>
+      </div>
+    </div>
+
+    <!-- PRODUITS HYGIENES Section -->
+    <div id="hygiene-section" class="inventory-subsection">
+      <div class="subsection-header">
+        <div class="subsection-title">PRODUITS HYGIENES</div>
+        <div class="subsection-title">PRODUITS HYGIENES</div>
+      </div>
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Article</th>
+            <th>Quantité en Stock</th>
+            <th>Quantité Minimum</th>
+            <th>Observations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Shampooing</strong></td>
+            <td><input type="number" data-item="shampooing_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="shampooing_min" min="0" value="0"></td>
+            <td><input type="number" data-item="shampooing_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Gel douche</strong></td>
+            <td><input type="number" data-item="gel_douche_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="gel_douche_min" min="0" value="0"></td>
+            <td><input type="number" data-item="gel_douche_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Savon</strong></td>
+            <td><input type="number" data-item="savon_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="savon_min" min="0" value="0"></td>
+            <td><input type="number" data-item="savon_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Papier toilette</strong></td>
+            <td><input type="number" data-item="papier_toilette_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="papier_toilette_min" min="0" value="0"></td>
+            <td><input type="number" data-item="papier_toilette_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Mouchoirs</strong></td>
+            <td><input type="number" data-item="mouchoirs_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="mouchoirs_min" min="0" value="0"></td>
+            <td><input type="number" data-item="mouchoirs_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Cotons-tiges</strong></td>
+            <td><input type="number" data-item="cotons_tiges_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="cotons_tiges_min" min="0" value="0"></td>
+            <td><input type="number" data-item="cotons_tiges_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Bonnets de douche</strong></td>
+            <td><input type="number" data-item="bonnets_douche_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="bonnets_douche_min" min="0" value="0"></td>
+            <td><input type="number" data-item="bonnets_douche_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Kits dentaires</strong></td>
+            <td><input type="number" data-item="kits_dentaires_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="kits_dentaires_min" min="0" value="0"></td>
+            <td><input type="number" data-item="kits_dentaires_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Rasoirs jetables</strong></td>
+            <td><input type="number" data-item="rasoirs_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="rasoirs_min" min="0" value="0"></td>
+            <td><input type="number" data-item="rasoirs_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Mousse à raser</strong></td>
+            <td><input type="number" data-item="mousse_raser_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="mousse_raser_min" min="0" value="0"></td>
+            <td><input type="number" data-item="mousse_raser_obs" min="0" value="0"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="subsection-footer">
+        <button class="btn-save" onclick="saveInventory('hygiene')">Enregistrer</button>
+        <span class="save-message" id="save-msg-hygiene">✓ Enregistré avec succès</span>
+      </div>
+    </div>
+
+    <!-- PRODUITS ETAGES Section -->
+    <div id="etages-section" class="inventory-subsection">
+      <div class="subsection-header">
+        <div class="subsection-title">PRODUITS ETAGES</div>
+        <div class="subsection-title">PRODUITS ETAGES</div>
+      </div>
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Article</th>
+            <th>Quantité en Stock</th>
+            <th>Quantité Minimum</th>
+            <th>Observations</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Produits nettoyants multi-surfaces</strong></td>
+            <td><input type="number" data-item="nettoyant_multi_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="nettoyant_multi_min" min="0" value="0"></td>
+            <td><input type="number" data-item="nettoyant_multi_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Nettoyant vitres</strong></td>
+            <td><input type="number" data-item="nettoyant_vitres_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="nettoyant_vitres_min" min="0" value="0"></td>
+            <td><input type="number" data-item="nettoyant_vitres_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Désinfectant salle de bain</strong></td>
+            <td><input type="number" data-item="desinfectant_sdb_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="desinfectant_sdb_min" min="0" value="0"></td>
+            <td><input type="number" data-item="desinfectant_sdb_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Détartrant</strong></td>
+            <td><input type="number" data-item="detartrant_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="detartrant_min" min="0" value="0"></td>
+            <td><input type="number" data-item="detartrant_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Eau de javel</strong></td>
+            <td><input type="number" data-item="javel_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="javel_min" min="0" value="0"></td>
+            <td><input type="number" data-item="javel_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Sacs poubelle</strong></td>
+            <td><input type="number" data-item="sacs_poubelle_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="sacs_poubelle_min" min="0" value="0"></td>
+            <td><input type="number" data-item="sacs_poubelle_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Chiffons microfibre</strong></td>
+            <td><input type="number" data-item="chiffons_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="chiffons_min" min="0" value="0"></td>
+            <td><input type="number" data-item="chiffons_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Eponges</strong></td>
+            <td><input type="number" data-item="eponges_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="eponges_min" min="0" value="0"></td>
+            <td><input type="number" data-item="eponges_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Balai et serpillère</strong></td>
+            <td><input type="number" data-item="balai_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="balai_min" min="0" value="0"></td>
+            <td><input type="number" data-item="balai_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Aspirateur (état)</strong></td>
+            <td><input type="number" data-item="aspirateur_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="aspirateur_min" min="0" value="0"></td>
+            <td><input type="number" data-item="aspirateur_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Gants de ménage</strong></td>
+            <td><input type="number" data-item="gants_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="gants_min" min="0" value="0"></td>
+            <td><input type="number" data-item="gants_obs" min="0" value="0"></td>
+          </tr>
+          <tr>
+            <td><strong>Parfum d'ambiance</strong></td>
+            <td><input type="number" data-item="parfum_ambiance_stock" min="0" value="0"></td>
+            <td><input type="number" data-item="parfum_ambiance_min" min="0" value="0"></td>
+            <td><input type="number" data-item="parfum_ambiance_obs" min="0" value="0"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="subsection-footer">
+        <button class="btn-save" onclick="saveInventory('etages')">Enregistrer</button>
+        <span class="save-message" id="save-msg-etages">✓ Enregistré avec succès</span>
+      </div>
+    </div>
+  `;
+  appDiv.appendChild(inventorySection);
+  // Inventory save functions
+  window.saveInventory = function(section) {
+    const saveMsg = document.getElementById(`save-msg-${section}`);
+    const inputs = document.querySelectorAll(`#${section}-section input[type="number"]`);
+    const inventoryData = {};
+    
+    inputs.forEach(input => {
+      inventoryData[input.dataset.item] = parseInt(input.value) || 0;
+    });
+    
+    // Save to Firebase
+    const inventoryRef = ref(db, `inventory/${section}`);
+    update(inventoryRef, inventoryData).then(() => {
+      saveMsg.style.display = 'inline';
+      setTimeout(() => {
+        saveMsg.style.display = 'none';
+      }, 3000);
+    });
+  };
+
+  // Load inventory data from Firebase
+  window.loadInventory = function(section) {
+    const inventoryRef = ref(db, `inventory/${section}`);
+    onValue(inventoryRef, snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        Object.entries(data).forEach(([item, value]) => {
+          const input = document.querySelector(`#${section}-section input[data-item="${item}"]`);
+          if (input) input.value = value;
+        });
+      }
+    });
+  };
+
   window.initUI = function () {
     document.getElementById("currentDate").textContent = new Date().toLocaleDateString('fr-FR');
+    
+    // Load inventory data
+    loadInventory('linges');
+    loadInventory('hygiene');
+    loadInventory('etages');
 
     // Ajouter les collaborateurs au filtre
     const filtreSelect = document.getElementById("filtre");
